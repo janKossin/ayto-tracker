@@ -24,7 +24,29 @@ export async function importJsonDataForVersion(fileName: string, version: string
       throw new Error(`Fehler beim Laden der JSON-Datei ${fileName}: ${response.statusText}`)
     }
     
-    const jsonData: JsonImportData = await response.json()
+    const rawData: unknown = await response.json()
+    
+    // Unterstütze beide Formate:
+    // 1. Objekt-Format: { participants: [...], matchboxes: [...], ... }
+    // 2. Array-Format: [...] (nur Teilnehmer)
+    let jsonData: JsonImportData
+    
+    if (Array.isArray(rawData)) {
+      // Array-Format: Direktes Array von Teilnehmern
+      console.log(`📥 JSON-Datei im Array-Format erkannt (${rawData.length} Teilnehmer)`)
+      jsonData = {
+        participants: rawData as Participant[],
+        matchboxes: [],
+        matchingNights: [],
+        penalties: []
+      }
+    } else if (rawData && typeof rawData === 'object' && 'participants' in rawData) {
+      // Objekt-Format: Vollständige Datenstruktur
+      console.log(`📥 JSON-Datei im Objekt-Format erkannt`)
+      jsonData = rawData as JsonImportData
+    } else {
+      throw new Error('Ungültiges JSON-Format: Erwartet wird entweder ein Array von Teilnehmern oder ein Objekt mit participants, matchboxes, etc.')
+    }
     
     // Lösche alle bestehenden Daten
     await db.transaction('rw', [db.participants, db.matchboxes, db.matchingNights, db.penalties], async () => {
@@ -34,10 +56,51 @@ export async function importJsonDataForVersion(fileName: string, version: string
       await db.penalties.clear()
     })
     
-    // Importiere neue Daten
+    // Normalisiere und importiere Teilnehmer
     await db.transaction('rw', [db.participants, db.matchboxes, db.matchingNights, db.penalties], async () => {
       if (jsonData.participants && jsonData.participants.length > 0) {
-        await db.participants.bulkPut(jsonData.participants)
+        // Normalisiere Teilnehmer-Daten
+        const normalizedParticipants = jsonData.participants.map((participant: any) => {
+          // Gender-Mapping: w/m -> F/M
+          let gender = participant.gender
+          if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
+            gender = 'F'
+          } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
+            gender = 'M'
+          }
+          
+          // Status normalisieren (aktiv -> Aktiv, etc.)
+          let status = participant.status || 'Aktiv'
+          if (typeof status === 'string') {
+            const statusLower = status.toLowerCase()
+            if (statusLower === 'aktiv' || statusLower === 'active') {
+              status = 'Aktiv'
+            } else if (statusLower === 'inaktiv' || statusLower === 'inactive') {
+              status = 'Inaktiv'
+            } else if (statusLower === 'perfekt match' || statusLower === 'perfect match') {
+              status = 'Perfekt Match'
+            }
+          }
+          
+          // Stelle sicher, dass alle erforderlichen Felder vorhanden sind
+          return {
+            name: participant.name || 'Unbekannt',
+            knownFrom: participant.knownFrom || '',
+            age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
+            status: status,
+            active: participant.active !== false, // Default: aktiv
+            photoUrl: participant.photoUrl || '',
+            bio: participant.bio || '',
+            gender: gender || 'F', // Default: weiblich falls unbekannt
+            socialMediaAccount: participant.socialMediaAccount || '',
+            freeProfilePhotoUrl: participant.freeProfilePhotoUrl || '',
+            // ID beibehalten, falls vorhanden
+            ...(participant.id && { id: participant.id })
+          }
+        })
+        
+        console.log(`✅ ${normalizedParticipants.length} Teilnehmer normalisiert und bereit zum Import`)
+        await db.participants.bulkPut(normalizedParticipants)
       }
       
       if (jsonData.matchboxes && jsonData.matchboxes.length > 0) {
@@ -88,11 +151,25 @@ export async function importJsonDataForVersion(fileName: string, version: string
       }
     })
     
-    console.log(`✅ JSON-Daten erfolgreich für Version ${version} importiert`)
+    // Lade Datenzählungen nach dem Import
+    const [participantsCount, matchboxesCount, matchingNightsCount, penaltiesCount] = await Promise.all([
+      db.participants.count(),
+      db.matchboxes.count(),
+      db.matchingNights.count(),
+      db.penalties.count()
+    ])
+    
+    console.log(`✅ JSON-Daten erfolgreich für Version ${version} importiert:`)
+    console.log(`   📊 ${participantsCount} Teilnehmer`)
+    console.log(`   📊 ${matchboxesCount} Matchboxes`)
+    console.log(`   📊 ${matchingNightsCount} Matching Nights`)
+    console.log(`   📊 ${penaltiesCount} Strafen`)
+    
     return true
     
   } catch (error) {
     console.error('❌ Fehler beim Importieren der JSON-Daten:', error)
+    console.error('Fehler-Details:', error instanceof Error ? error.message : String(error))
     return false
   }
 }

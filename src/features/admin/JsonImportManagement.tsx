@@ -110,25 +110,28 @@ const JsonImportManagement: React.FC<JsonImportManagementProps> = ({ onDataUpdat
       const success = await importJsonDataForVersion(selectedFile, version)
       
       if (success) {
+        // Lade aktualisierte Datenzählungen
+        await loadDataCounts()
+        onDataUpdate?.()
+        
         setSnackbar({
           open: true,
-          message: `JSON-Daten erfolgreich aus ${selectedFile} importiert!`,
+          message: `✅ JSON-Daten erfolgreich aus ${selectedFile} importiert!`,
           severity: 'success'
         })
-        loadDataCounts()
-        onDataUpdate?.()
       } else {
         setSnackbar({
           open: true,
-          message: 'Fehler beim Importieren der JSON-Daten',
+          message: '❌ Fehler beim Importieren der JSON-Daten. Bitte überprüfe die Browser-Konsole für Details.',
           severity: 'error'
         })
       }
     } catch (error) {
       console.error('Import-Fehler:', error)
+      const errorMessage = error instanceof Error ? error.message : String(error)
       setSnackbar({
         open: true,
-        message: `Fehler beim Importieren: ${error}`,
+        message: `❌ Fehler beim Importieren: ${errorMessage}`,
         severity: 'error'
       })
     } finally {

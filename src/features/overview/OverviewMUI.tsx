@@ -2403,7 +2403,7 @@ const OverviewMUI: React.FC = () => {
             {/* Benutzer-Lösungs-Matrix */}
             <Card sx={{ height: 'fit-content', mb: 3 }}>
                 <CardHeader 
-                  title="Meine Lösung"
+                  title="Deine Lösung"
                   subheader="Trage hier deine eigene Lösung ein"
                   action={
                     <Box sx={{ display: 'flex', gap: 1 }}>

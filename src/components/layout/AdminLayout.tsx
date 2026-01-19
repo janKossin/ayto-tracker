@@ -210,23 +210,22 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       {/* Navigation */}
       <Box sx={{ flex: 1, py: 2 }}>
-        <Typography 
-          variant="overline" 
-          sx={{ 
-            px: 3, 
-            color: 'text.secondary',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            letterSpacing: '0.5px'
-          }}
-        >
-          Navigation
-        </Typography>
-        <List sx={{ px: 2, mt: 1 }}>
-          {menuItems.map((item) => (
-            <ListItem key={item.value} disablePadding sx={{ mb: 0.5 }}>
+        <List sx={{ px: 2, pt: 0 }}>
+          {menuItems.map((item, index) => (
+            <ListItem 
+              key={item.value} 
+              disablePadding 
+              sx={{ 
+                mb: 0.5,
+                pl: index > 0 ? 2 : 0 // Einrücken für alle Items nach Dashboard
+              }}
+            >
               <ListItemButton
-                onClick={() => onTabChange?.(item.value)}
+                onClick={() => {
+                  if (!item.disabled) {
+                    onTabChange?.(item.value)
+                  }
+                }}
                 disabled={item.disabled}
                 sx={{
                   borderRadius: 1.5,
@@ -237,11 +236,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                   '&:hover': {
                     backgroundColor: activeTab === item.value 
                       ? 'primary.dark' 
-                      : 'action.hover'
+                      : item.disabled ? 'transparent' : 'action.hover'
                   },
                   '&.Mui-disabled': {
-                    opacity: 0.5,
-                    color: 'text.disabled'
+                    opacity: 1,
+                    color: activeTab === item.value ? 'primary.contrastText' : 'text.primary',
+                    cursor: 'default'
                   }
                 }}
               >
@@ -261,18 +261,6 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                     color: activeTab === item.value ? 'common.white' : 'text.primary'
                   }}
                 />
-                {item.disabled && (
-                  <Chip 
-                    label="Soon" 
-                    size="small" 
-                    sx={{ 
-                      height: 20, 
-                      fontSize: '0.6875rem',
-                      bgcolor: 'action.selected',
-                      color: 'text.secondary'
-                    }} 
-                  />
-                )}
               </ListItemButton>
             </ListItem>
           ))}

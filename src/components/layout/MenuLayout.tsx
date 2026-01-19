@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   Box,
   Drawer,
@@ -13,14 +13,15 @@ import {
   IconButton,
   Card,
   Avatar,
-  Button
+  Button,
+  Tooltip
 } from '@mui/material'
 import {
   Menu as MenuIcon,
   Home as HomeIcon,
   Nightlife as NightlifeIcon,
   Inventory as InventoryIcon,
-  AdminPanelSettings as AdminIcon,
+  Settings as SettingsIcon,
   Add as AddIcon,
   LightMode as LightModeIcon,
   AutoAwesome as AutoAwesomeIcon,
@@ -42,28 +43,58 @@ interface MenuLayoutProps {
   currentLights?: number
   perfectMatchesCount?: number
   currentBalance?: number
+  participantsCount?: number
 }
 
 const MenuLayout: React.FC<MenuLayoutProps> = ({ 
   children, 
-  activeTab = 'overview',
+  activeTab,
   onTabChange,
   onCreateMatchbox,
   onCreateMatchingNight,
   matchingNightsCount = 0,
   currentLights = 0,
   perfectMatchesCount = 0,
-  currentBalance = 0
+  currentBalance = 0,
+  participantsCount = 0
 }) => {
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [showOnboarding, setShowOnboarding] = useState(false)
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen)
   }
 
+  // Prüfe, ob Onboarding angezeigt werden soll
+  useEffect(() => {
+    const onboardingShown = localStorage.getItem('ayto-onboarding-shown')
+    const shouldShow = !onboardingShown && participantsCount === 0
+    
+    if (shouldShow) {
+      // Kleine Verzögerung, damit die Seite vollständig geladen ist
+      const timer = setTimeout(() => {
+        setShowOnboarding(true)
+      }, 1000)
+      
+      return () => clearTimeout(timer)
+    }
+  }, [participantsCount])
+
+  const handleOnboardingDismiss = () => {
+    setShowOnboarding(false)
+    localStorage.setItem('ayto-onboarding-shown', 'true')
+  }
+
+  const handleSettingsClick = () => {
+    if (showOnboarding) {
+      handleOnboardingDismiss()
+    }
+    window.location.href = '/admin'
+  }
+
   const menuItems = [
     {
-      text: 'Übersicht',
+      text: 'Home',
       icon: <HomeIcon />,
       value: 'overview'
     },
@@ -86,12 +117,6 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
       text: 'Wahrscheinlichkeit',
       icon: <PercentIcon />,
       value: 'probabilities'
-    },
-    {
-      text: 'Admin Panel',
-      icon: <AdminIcon />,
-      value: 'admin',
-      action: () => window.location.href = '/admin'
     }
   ]
 
@@ -122,53 +147,14 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
         </Box>
       </Box>
 
-      {/* Action Buttons */}
-      <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Button 
-          variant="contained" 
-          color="secondary" 
-          fullWidth 
-          startIcon={<AddIcon />} 
-          sx={{ mb: 1.5 }} 
-          onClick={onCreateMatchingNight}
-        >
-          Neue Matching Night
-        </Button>
-        <Button 
-          variant="contained" 
-          color="primary" 
-          fullWidth 
-          startIcon={<AddIcon />} 
-          onClick={onCreateMatchbox}
-        >
-          Matchbox erstellen
-        </Button>
-      </Box>
-
       {/* Navigation */}
       <Box sx={{ flex: 1, py: 2 }}>
-        <Typography 
-          variant="overline" 
-          sx={{ 
-            px: 3, 
-            color: 'text.secondary',
-            fontSize: '0.75rem',
-            fontWeight: 600,
-            letterSpacing: '0.5px'
-          }}
-        >
-          Navigation
-        </Typography>
-        <List sx={{ px: 2, mt: 1 }}>
+        <List sx={{ px: 2, pt: 0 }}>
           {menuItems.map((item) => (
             <ListItem key={item.value} disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
                 onClick={() => {
-                  if (item.action) {
-                    item.action()
-                  } else {
-                    onTabChange?.(item.value)
-                  }
+                  onTabChange?.(item.value)
                 }}
                 sx={{
                   borderRadius: 1.5,
@@ -327,6 +313,99 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
           <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
             AYTO 2026 - Live-Tracker
           </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
+            <Button 
+              variant="contained" 
+              color="secondary" 
+              size="small"
+              startIcon={<AddIcon />} 
+              onClick={onCreateMatchingNight}
+              sx={{ display: { xs: 'none', sm: 'flex' } }}
+            >
+              Neue Matching Night
+            </Button>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              size="small"
+              startIcon={<AddIcon />} 
+              onClick={onCreateMatchbox}
+              sx={{ display: { xs: 'none', sm: 'flex' } }}
+            >
+              Neue Matchbox
+            </Button>
+          </Box>
+          <Box sx={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            {showOnboarding && (
+              <Box
+                sx={{
+                  position: 'absolute',
+                  right: 48,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  px: 2,
+                  py: 1,
+                  borderRadius: 2,
+                  fontSize: '0.875rem',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  zIndex: 1300,
+                  animation: 'pulse 2s infinite',
+                  '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    right: -8,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 0,
+                    height: 0,
+                    borderTop: '8px solid transparent',
+                    borderBottom: '8px solid transparent',
+                    borderLeft: '8px solid',
+                    borderLeftColor: 'primary.main'
+                  }
+                }}
+              >
+                Kandidat*innen hinzufügen
+              </Box>
+            )}
+            <Tooltip 
+              title={showOnboarding ? "Kandidat*innen hinzufügen" : "Einstellungen"}
+              open={showOnboarding ? true : undefined}
+              arrow
+            >
+              <IconButton
+                onClick={handleSettingsClick}
+                sx={{
+                  opacity: showOnboarding ? 1 : 0.6,
+                  color: showOnboarding ? 'primary.main' : 'text.secondary',
+                  position: 'relative',
+                  animation: showOnboarding ? 'pulse 2s infinite' : 'none',
+                  '@keyframes pulse': {
+                    '0%': {
+                      boxShadow: '0 0 0 0 rgba(25, 118, 210, 0.7)',
+                    },
+                    '70%': {
+                      boxShadow: '0 0 0 10px rgba(25, 118, 210, 0)',
+                    },
+                    '100%': {
+                      boxShadow: '0 0 0 0 rgba(25, 118, 210, 0)',
+                    },
+                  },
+                  '&:hover': {
+                    opacity: 1,
+                    color: 'primary.main'
+                  }
+                }}
+                aria-label="Einstellungen"
+              >
+                <SettingsIcon />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Toolbar>
       </AppBar>
 

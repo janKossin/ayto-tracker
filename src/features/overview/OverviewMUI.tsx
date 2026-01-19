@@ -737,6 +737,7 @@ const OverviewMUI: React.FC = () => {
   const [matchboxes, setMatchboxes] = useState<Matchbox[]>([])
   const [penalties, setPenalties] = useState<Penalty[]>([])
   const [activeTab, setActiveTab] = useState(0)
+  const [hasUserSelectedTab, setHasUserSelectedTab] = useState(false)
   const [expandedMatchingNights, setExpandedMatchingNights] = useState<Set<number>>(new Set())
   
   // Wahrscheinlichkeits-Berechnung Hook
@@ -1547,8 +1548,9 @@ const OverviewMUI: React.FC = () => {
 
   return (
     <MenuLayout
-      activeTab={activeTab === 0 ? 'overview' : activeTab === 1 ? 'candidates' : activeTab === 2 ? 'matching-nights' : activeTab === 3 ? 'matchbox' : 'probabilities'}
+      activeTab={hasUserSelectedTab ? (activeTab === 0 ? 'overview' : activeTab === 1 ? 'candidates' : activeTab === 2 ? 'matching-nights' : activeTab === 3 ? 'matchbox' : activeTab === 4 ? 'probabilities' : undefined) : undefined}
       onTabChange={(tab) => {
+        setHasUserSelectedTab(true)
         if (tab === 'overview') setActiveTab(0)
         else if (tab === 'candidates') setActiveTab(1)
         else if (tab === 'matching-nights') setActiveTab(2)
@@ -1561,6 +1563,7 @@ const OverviewMUI: React.FC = () => {
       currentLights={statistics.currentLights}
       perfectMatchesCount={statistics.perfectMatchesCount}
       currentBalance={statistics.currentBalance}
+      participantsCount={participants.length}
     >
 
         {/* Main Content */}
@@ -3123,7 +3126,7 @@ const OverviewMUI: React.FC = () => {
         <DialogTitle>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Neue Matchbox erstellen
+              Neue Matchbox
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {isMobile ? '📱 Wähle Kandidat*innen aus den Listen aus' : '💡 Ziehe Kandidat*innen aus der Übersicht hier hinein'}

@@ -61,7 +61,6 @@ import {
   DeleteSweep as DeleteSweepIcon,
   Backup as BackupIcon,
   HelpOutline as HelpOutlineIcon,
-  ExpandMore as ExpandMoreIcon,
   Cached as CachedIcon,
   Inventory as InventoryIcon,
   Analytics as AnalyticsIcon,
@@ -258,9 +257,14 @@ const ParticipantsList: React.FC<{
   participants: Participant[]
   onEdit: (participant: Participant) => void
   onDelete: (id: number) => void
-  limit: number
-  onLoadMore: () => void
-}> = ({ participants, onEdit, onDelete, limit, onLoadMore }) => {
+  womenLimit: number
+  menLimit: number
+  onLoadMoreWomen: () => void
+  onLoadMoreMen: () => void
+}> = ({ participants, onEdit, onDelete, womenLimit, menLimit, onLoadMoreWomen, onLoadMoreMen }) => {
+  const women = participants.filter(p => p.gender === 'F')
+  const men = participants.filter(p => p.gender === 'M')
+  
   return (
     <Card>
       <CardHeader 
@@ -277,7 +281,7 @@ const ParticipantsList: React.FC<{
                 <WomanIcon />
               </Avatar>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Frauen ({participants.filter(p => p.gender === 'F').length})
+                Frauen ({women.length})
               </Typography>
             </Box>
         <Box sx={{ 
@@ -290,7 +294,7 @@ const ParticipantsList: React.FC<{
               gap: 2,
               mb: 4
             }}>
-              {participants.filter(p => p.gender === 'F').slice(0, Math.ceil(limit / 2)).map((participant) => (
+              {women.slice(0, womenLimit).map((participant) => (
                 <Card 
                   key={participant.id} 
                   sx={{ 
@@ -493,6 +497,13 @@ const ParticipantsList: React.FC<{
                 </Card>
               ))}
                   </Box>
+            {womenLimit < women.length && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                <Button variant="outlined" onClick={onLoadMoreWomen}>
+                  Alle laden
+                </Button>
+              </Box>
+            )}
           </Box>
 
           {/* Men Section */}
@@ -502,7 +513,7 @@ const ParticipantsList: React.FC<{
                 <ManIcon />
               </Avatar>
               <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                Männer ({participants.filter(p => p.gender === 'M').length})
+                Männer ({men.length})
               </Typography>
             </Box>
             <Box sx={{ 
@@ -514,7 +525,7 @@ const ParticipantsList: React.FC<{
               },
               gap: 2
             }}>
-              {participants.filter(p => p.gender === 'M').slice(0, Math.ceil(limit / 2)).map((participant) => (
+              {men.slice(0, menLimit).map((participant) => (
                 <Card 
                   key={participant.id} 
                   sx={{ 
@@ -717,15 +728,15 @@ const ParticipantsList: React.FC<{
                 </Card>
               ))}
             </Box>
+            {menLimit < men.length && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+                <Button variant="outlined" onClick={onLoadMoreMen}>
+                  Alle laden
+                </Button>
+              </Box>
+            )}
           </Box>
         </Box>
-        {limit < participants.length && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-            <Button variant="outlined" onClick={onLoadMore}>
-              Mehr laden ({participants.length - limit} weitere)
-            </Button>
-          </Box>
-        )}
       </CardContent>
     </Card>
   )
@@ -887,7 +898,7 @@ const MatchboxManagement: React.FC<{
           startIcon={<AddIcon />}
           onClick={() => setShowDialog(true)}
         >
-          Neue Matchbox erstellen
+          Neue Matchbox
         </Button>
         <Chip icon={<FavoriteIcon />} label={`${perfectMatches}`} color="success" size="small" />
         <Chip icon={<HeartBrokenIcon />} label={`${noMatches}`} color="error" size="small" />
@@ -995,7 +1006,7 @@ const MatchboxManagement: React.FC<{
       {/* Create/Edit Dialog */}
       <Dialog open={showDialog} onClose={resetForm} maxWidth="md" fullWidth>
         <DialogTitle>
-          {editingMatchbox ? 'Matchbox bearbeiten' : 'Neue Matchbox erstellen'}
+          {editingMatchbox ? 'Matchbox bearbeiten' : 'Neue Matchbox'}
         </DialogTitle>
         <DialogContent>
           <Stack spacing={3} sx={{ mt: 2 }}>
@@ -3390,7 +3401,8 @@ const AdminPanelMUI: React.FC = () => {
   const [penalties, setPenalties] = useState<Penalty[]>([])
   const [activeTab, setActiveTab] = useState('participants')
   const [editingParticipant, setEditingParticipant] = useState<Participant | undefined>(undefined)
-  const [limit, setLimit] = useState(12)
+  const [womenLimit, setWomenLimit] = useState(6)
+  const [menLimit, setMenLimit] = useState(6)
   const [showParticipantForm, setShowParticipantForm] = useState(false)
   
   // Ref for the participant form to scroll to it
@@ -3449,6 +3461,84 @@ const AdminPanelMUI: React.FC = () => {
     }
   }
 
+  const handleImportParticipantsJSON = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    try {
+      const text = await file.text()
+      const arr = JSON.parse(text)
+      
+      // Prüfe, ob es ein Array oder ein Objekt mit participants-Key ist
+      const participantsArray = Array.isArray(arr) ? arr : (arr.participants || [])
+      
+      if (!Array.isArray(participantsArray) || participantsArray.length === 0) {
+        alert('Die JSON-Datei enthält keine gültigen Kandidat*innen-Daten.')
+        return
+      }
+      
+      // Daten normalisieren und Gender-Mapping durchführen
+      const normalizedParticipants = participantsArray.map((participant: any) => {
+        // Gender-Mapping: w/m -> F/M
+        let gender = participant.gender
+        if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
+          gender = 'F'
+        } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
+          gender = 'M'
+        }
+        
+        // Status normalisieren
+        let status = participant.status
+        if (status === 'aktiv' || status === 'Aktiv') {
+          status = 'Aktiv'
+        } else if (status === 'perfekt match' || status === 'Perfekt Match') {
+          status = 'Perfekt Match'
+        }
+        
+        return {
+          name: participant.name || 'Unbekannt',
+          knownFrom: participant.knownFrom || '',
+          age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
+          status: status || 'Aktiv',
+          active: participant.active !== false,
+          photoUrl: participant.photoUrl || '',
+          source: participant.source || '',
+          bio: participant.bio || '',
+          gender: gender || 'F',
+          socialMediaAccount: participant.socialMediaAccount || '',
+        }
+      })
+      
+      const confirmed = confirm(
+        `${normalizedParticipants.length} Kandidat*innen aus JSON importieren?\n\nDies ersetzt alle bestehenden Kandidat*innen!`
+      )
+      
+      if (!confirmed) {
+        e.target.value = ''
+        return
+      }
+      
+      try {
+        await db.transaction('rw', db.participants, async () => {
+          await db.participants.clear()
+          await db.participants.bulkPut(normalizedParticipants)
+        })
+        
+        await loadAllData()
+        alert(`✅ Import erfolgreich! ${normalizedParticipants.length} Kandidat*innen wurden importiert.`)
+      } catch (error) {
+        console.error('Fehler beim Import:', error)
+        alert(`❌ Fehler beim Import: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}`)
+      }
+    } catch (error) {
+      console.error('Fehler beim Import:', error)
+      alert(`❌ Fehler beim Import: ${error instanceof Error ? error.message : 'Unbekannter Fehler'}\n\nBitte überprüfen Sie die JSON-Datei.`)
+    } finally {
+      // Reset file input
+      e.target.value = ''
+    }
+  }
+
 
 
   return (
@@ -3472,29 +3562,57 @@ const AdminPanelMUI: React.FC = () => {
                 participants={participants}
                 onEdit={handleEditParticipant}
                 onDelete={handleDeleteParticipant}
-                limit={limit}
-                onLoadMore={() => setLimit(limit + 12)}
+                womenLimit={womenLimit}
+                menLimit={menLimit}
+                onLoadMoreWomen={() => {
+                  const women = participants.filter(p => p.gender === 'F')
+                  setWomenLimit(women.length)
+                }}
+                onLoadMoreMen={() => {
+                  const men = participants.filter(p => p.gender === 'M')
+                  setMenLimit(men.length)
+                }}
               />
 
-              {/* Collapsible Add/Edit Form */}
-              <Box ref={participantFormRef} sx={{ mt: 4 }}>
+              {/* Action Buttons */}
+              <Box sx={{ mt: 4, mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
                 <Button
                   variant="contained"
                   startIcon={editingParticipant ? <EditIcon /> : <AddIcon />}
-                  endIcon={
-                    <ExpandMoreIcon 
-                      sx={{ 
-                        transform: showParticipantForm ? 'rotate(180deg)' : 'rotate(0deg)',
-                        transition: 'transform 0.3s'
-                      }} 
-                    />
-                  }
-                  onClick={() => setShowParticipantForm(!showParticipantForm)}
-                  fullWidth
-                  sx={{ mb: 2 }}
+                  onClick={() => {
+                    setShowParticipantForm(!showParticipantForm)
+                    if (!showParticipantForm) {
+                      setTimeout(() => {
+                        participantFormRef.current?.scrollIntoView({ 
+                          behavior: 'smooth', 
+                          block: 'start' 
+                        })
+                      }, 100)
+                    }
+                  }}
+                  sx={{ flex: { xs: '1 1 100%', sm: '1 1 auto' } }}
                 >
-                  {editingParticipant ? 'Kandidat*in bearbeiten' : 'Neue*n Kandidat*in hinzufügen'}
+                  {editingParticipant ? 'Kandidat*in bearbeiten' : 'Einzelne Kandidat*innen hinzufügen'}
                 </Button>
+                
+                <Button
+                  variant="outlined"
+                  startIcon={<UploadIcon />}
+                  component="label"
+                  sx={{ flex: { xs: '1 1 100%', sm: '1 1 auto' } }}
+                >
+                  JSON Datei Importieren
+                  <input
+                    type="file"
+                    accept=".json,application/json"
+                    hidden
+                    onChange={handleImportParticipantsJSON}
+                  />
+                </Button>
+              </Box>
+
+              {/* Collapsible Add/Edit Form */}
+              <Box ref={participantFormRef} sx={{ mt: 2 }}>
                 
                 <Collapse in={showParticipantForm}>
                   <Card variant="outlined">

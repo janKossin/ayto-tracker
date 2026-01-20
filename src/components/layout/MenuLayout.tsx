@@ -309,9 +309,14 @@ const MenuLayout: React.FC<MenuLayoutProps> = ({
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 600 }}>
-            AYTO 2026 - Live-Tracker
-          </Typography>
+          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
+            <Typography variant="h6" component="div" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+              AYTO 2026
+            </Typography>
+            <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+              Live-Tracker
+            </Typography>
+          </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mr: 2 }}>
             {/* Mobile: Icon-only buttons */}
             <Tooltip title="Neue Matching Night" arrow>

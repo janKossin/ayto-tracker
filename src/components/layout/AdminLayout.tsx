@@ -23,7 +23,6 @@ import {
   Dashboard as DashboardIcon,
   People as PeopleIcon,
   Nightlife as NightlifeIcon,
-  Settings as SettingsIcon,
   ImportExport as ImportExportIcon,
   Inventory as InventoryIcon,
   Schedule as ScheduleIcon,

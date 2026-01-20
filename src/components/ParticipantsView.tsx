@@ -3,7 +3,6 @@ import {
   Box,
   Card,
   CardContent,
-  CardHeader,
   Typography,
   Button,
   Avatar,
@@ -11,8 +10,7 @@ import {
 } from '@mui/material'
 import {
   Woman as WomanIcon,
-  Man as ManIcon,
-  People as PeopleIcon
+  Man as ManIcon
 } from '@mui/icons-material'
 import type { Participant } from '@/types'
 

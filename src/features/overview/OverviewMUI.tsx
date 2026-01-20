@@ -39,7 +39,9 @@ import {
   LightMode as LightModeIcon,
   Save as SaveIcon,
   ExpandMore as ExpandMoreIcon,
-  ExpandLess as ExpandLessIcon
+  ExpandLess as ExpandLessIcon,
+  Nightlife as NightlifeIcon,
+  Inventory as InventoryIcon
 } from '@mui/icons-material'
 import ThemeProvider from '@/theme/ThemeProvider'
 import { db, type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
@@ -1943,9 +1945,14 @@ const OverviewMUI: React.FC = () => {
           {/* Matching Nights Tab */}
           <TabPanel value={activeTab} index={2}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                Matching Nights ({matchingNights.length})
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'primary.main' }}>
+                  <NightlifeIcon sx={{ color: 'white' }} />
+                </Avatar>
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                  Matching Nights ({matchingNights.length})
+                </Typography>
+              </Box>
             </Box>
             
             {/* Matching Nights List */}
@@ -1972,9 +1979,14 @@ const OverviewMUI: React.FC = () => {
           {/* Matchbox Tab */}
           <TabPanel value={activeTab} index={3}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
-                Matchboxes ({matchboxes.length})
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                <Avatar sx={{ bgcolor: 'secondary.main' }}>
+                  <InventoryIcon sx={{ color: 'white' }} />
+                </Avatar>
+                <Typography variant="h5" sx={{ fontWeight: 'bold' }}>
+                  Matchboxes ({matchboxes.length})
+                </Typography>
+              </Box>
             </Box>
             
             {matchboxes.length === 0 ? (

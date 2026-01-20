@@ -63,7 +63,6 @@ import {
   HelpOutline as HelpOutlineIcon,
   Cached as CachedIcon,
   Inventory as InventoryIcon,
-  Analytics as AnalyticsIcon,
   Nightlife as NightlifeIcon,
   Schedule as ScheduleIcon,
 } from '@mui/icons-material'
@@ -910,7 +909,7 @@ const MatchboxManagement: React.FC<{
       <Card>
         <CardHeader 
           title={`Matchboxes (${matchboxes.length})`}
-          avatar={<Avatar sx={{ bgcolor: 'primary.main' }}><AnalyticsIcon /></Avatar>}
+          avatar={<Avatar sx={{ bgcolor: 'secondary.main' }}><InventoryIcon sx={{ color: 'white' }} /></Avatar>}
         />
         <CardContent>
           {matchboxes.length === 0 ? (
@@ -1370,7 +1369,7 @@ const MatchingNightManagement: React.FC<{
       <Card>
         <CardHeader 
           title={`Matching Nights (${matchingNights.length})`}
-          avatar={<Avatar sx={{ bgcolor: 'primary.main' }}><FavoriteIcon /></Avatar>}
+          avatar={<Avatar sx={{ bgcolor: 'primary.main' }}><NightlifeIcon sx={{ color: 'white' }} /></Avatar>}
         />
         <CardContent>
           {matchingNights.length === 0 ? (

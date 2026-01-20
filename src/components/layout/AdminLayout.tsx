@@ -29,7 +29,8 @@ import {
   Schedule as ScheduleIcon,
   Favorite as FavoriteIcon,
   LightMode as LightModeIcon,
-  Home as HomeIcon
+  Home as HomeIcon,
+  Savings as SavingsIcon
 } from '@mui/icons-material'
 import { db } from '@/lib/db'
 
@@ -172,7 +173,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     },
     {
       text: 'Budget & Stafen',
-      icon: <SettingsIcon />,
+      icon: <SavingsIcon />,
       value: 'settings'
     },
     {

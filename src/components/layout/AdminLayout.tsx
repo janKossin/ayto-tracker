@@ -15,7 +15,8 @@ import {
   useMediaQuery,
   Card,
   Avatar,
-  Chip
+  Chip,
+  Tooltip
 } from '@mui/material'
 import {
   Menu as MenuIcon,
@@ -27,7 +28,8 @@ import {
   Inventory as InventoryIcon,
   Schedule as ScheduleIcon,
   Favorite as FavoriteIcon,
-  LightMode as LightModeIcon
+  LightMode as LightModeIcon,
+  Home as HomeIcon
 } from '@mui/icons-material'
 import { db } from '@/lib/db'
 
@@ -267,7 +269,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         </List>
       </Box>
 
-      {/* User Info */}
+      {/* User Info - deaktiviert, wird später benötigt */}
+      {false && (
       <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
         <Card sx={{ p: 2, bgcolor: 'grey.50' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -285,6 +288,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           </Box>
         </Card>
       </Box>
+      )}
     </Box>
   )
 
@@ -313,22 +317,47 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           >
             <MenuIcon />
           </IconButton>
-          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column', lineHeight: 1.2 }}>
-            <Typography variant="h6" component="div" sx={{ fontWeight: 600 }}>
-              AYTO 2026
-            </Typography>
-            <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary' }}>
-              Admin
+          <Box sx={{ flexGrow: 1 }}>
+            {/* Mobile: Two lines */}
+            <Box sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', lineHeight: 1.2 }}>
+              <Typography variant="h6" component="div" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+                AYTO 2026
+              </Typography>
+              <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+                Admin
+              </Typography>
+            </Box>
+            {/* Desktop: Single line */}
+            <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
+              AYTO 2026 - Admin
             </Typography>
           </Box>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mr: 2, flexWrap: 'wrap', justifyContent: 'flex-end', rowGap: 0.5 }}>
             <Chip icon={<NightlifeIcon fontSize="small" />} label={`${stats.matchingNightsCount}`} size="small" color="primary" sx={{ fontWeight: 600 }} />
             <Chip icon={<InventoryIcon fontSize="small" />} label={`${stats.matchboxesCount}`} size="small" color="secondary" sx={{ fontWeight: 600 }} />
             <Chip icon={<FavoriteIcon fontSize="small" />} label={`${stats.perfectMatches}`} size="small" color="success" sx={{ fontWeight: 600 }} />
-            <Box sx={{ flexBasis: '100%', height: 0, margin: 0, padding: 0 }} />
+            <Box sx={{ flexBasis: { xs: '100%', sm: 0 }, height: 0, margin: 0, padding: 0 }} />
             <Chip icon={<LightModeIcon fontSize="small" />} label={`${stats.currentLights}`} size="small" color="warning" sx={{ fontWeight: 600 }} />
             <Chip label={`${stats.currentBalance.toLocaleString('de-DE')} €`} size="small" color={stats.currentBalance >= 0 ? 'success' : 'error'} sx={{ fontWeight: 700 }} />
           </Box>
+          <Tooltip title="Zur Startseite" arrow>
+            <IconButton
+              onClick={() => {
+                window.location.href = '/'
+              }}
+              sx={{
+                opacity: 0.6,
+                color: 'text.secondary',
+                '&:hover': {
+                  opacity: 1,
+                  color: 'primary.main'
+                }
+              }}
+              aria-label="Zur Startseite"
+            >
+              <HomeIcon />
+            </IconButton>
+          </Tooltip>
         </Toolbar>
       </AppBar>
 

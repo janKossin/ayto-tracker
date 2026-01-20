@@ -228,9 +228,19 @@ const themeOptions: ThemeOptions = {
           fontSize: '0.875rem'
         },
         containedPrimary: {
-          backgroundColor: themeColors.primary,
+          background: 'linear-gradient(135deg, #BD0A16 0%, #CD9536 100%)',
+          color: '#FFF',
           '&:hover': {
-            backgroundColor: '#8A080F'
+            background: 'linear-gradient(135deg, #8A080F 0%, #A6752A 100%)',
+            boxShadow: 4
+          }
+        },
+        containedSecondary: {
+          background: 'linear-gradient(135deg, #CD9536 0%, #BD0A16 100%)',
+          color: '#FFF',
+          '&:hover': {
+            background: 'linear-gradient(135deg, #A6752A 0%, #8A080F 100%)',
+            boxShadow: 4
           }
         }
       }

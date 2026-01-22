@@ -19,5 +19,5 @@ jobs:
           server: hosting119408.a2fac.netcup.net
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: /httpdocs/ayto-tracker.legendforest.de
+          server-dir: /httpdocs/legendforest.de
           local-dir: ./dist

@@ -1,4 +1,4 @@
-name: FTP Deployment
+name: 🚀 Deploy website on push
 
 on:
   push:
@@ -7,11 +7,12 @@ on:
 
 jobs:
   deploy:
+    name: 🎉 Deploy 
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: 🚚 Get latest code
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -28,8 +29,8 @@ jobs:
           NODE_ENV: production
           CI: true
 
-      - name: Deploy over FTP
-        uses: SamKirkland/FTP-Deploy-Action@v4
+      - name: 📂 Sync files
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.6
         with:
           server: hosting119408.a2fac.netcup.net
           username: ${{ secrets.FTP_USERNAME }}

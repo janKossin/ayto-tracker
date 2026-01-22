@@ -1,4 +1,4 @@
-  name: FTP Deployment
+name: FTP Deployment
 
 on:
   push:
@@ -12,6 +12,21 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build for production
+        run: npm run build
+        env:
+          NODE_ENV: production
+          CI: true
 
       - name: Deploy over FTP
         uses: SamKirkland/FTP-Deploy-Action@3.2.0

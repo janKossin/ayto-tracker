@@ -35,5 +35,5 @@ jobs:
           server: hosting119408.a2fac.netcup.net
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORT }}
-          server-dir: /httpdocs/legendforest.de
+          server-dir: /httpdocs/legendforest.de/
           local-dir: ./dist/

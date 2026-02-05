@@ -1,0 +1,388 @@
+{
+  "participants": [
+    {
+      "name": "Adrianna",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/8f9fd53f-e9eb-432e-91ce-ff5489253af7",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 1
+    },
+    {
+      "name": "Alicia",
+      "knownFrom": "",
+      "age": 22,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/7111b4e2-87f9-4995-8c79-2228bd6df2fa",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 2
+    },
+    {
+      "name": "Aurora",
+      "knownFrom": "",
+      "age": 26,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/1704a6fa-ecf4-4b88-94d2-a798af447857",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 3
+    },
+    {
+      "name": "Elena",
+      "knownFrom": "",
+      "age": 29,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/87d9319a-82f7-4c72-b799-7c5bafed5048",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 4
+    },
+    {
+      "name": "Ella",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/7d7131a1-f375-4e37-bec8-397d4d14c02d",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 5
+    },
+    {
+      "name": "Laura",
+      "knownFrom": "",
+      "age": 25,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/7408a759-a461-49a2-a186-b20a067725fe",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 6
+    },
+    {
+      "name": "Linda",
+      "knownFrom": "",
+      "age": 23,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/3322744a-570a-4928-9087-db1a1ebd1825",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 7
+    },
+    {
+      "name": "Marla",
+      "knownFrom": "",
+      "age": 25,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/326f559c-ccdd-48eb-8a0f-e621e69ca380",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 8
+    },
+    {
+      "name": "Michelle",
+      "knownFrom": "",
+      "age": 23,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/866afaa4-ca00-413c-9624-cef00f9e2676",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 9
+    },
+    {
+      "name": "Tiziana",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/5bf57c85-cdb8-4600-9d34-4f0f85924649",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 10
+    },
+    {
+      "name": "Tonia",
+      "knownFrom": "",
+      "age": 26,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/327d9339-4d7a-4643-af7b-91d662cdccaf",
+      "source": "",
+      "bio": "",
+      "gender": "F",
+      "socialMediaAccount": "",
+      "id": 11
+    },
+    {
+      "name": "Chris",
+      "knownFrom": "",
+      "age": 27,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/2011c218-4078-45cc-8ad5-74ceadfbd9dd",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 12
+    },
+    {
+      "name": "Ema",
+      "knownFrom": "",
+      "age": 26,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/e48439d3-c318-4e16-b7a0-e137e5aaa436",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 13
+    },
+    {
+      "name": "Evi",
+      "knownFrom": "",
+      "age": 22,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/bfac9cd7-1e06-40fb-9222-a6543fbc6ffc",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 14
+    },
+    {
+      "name": "Jeronymo",
+      "knownFrom": "",
+      "age": 22,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/f51a4f83-6b90-4826-8e69-e18275b7062c",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 15
+    },
+    {
+      "name": "Jerry",
+      "knownFrom": "",
+      "age": 30,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/253ecef6-441b-4b4b-ab60-7723c16a912a",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 16
+    },
+    {
+      "name": "Julian M.",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/273c0758-6491-4a3a-859a-9baf2d8f6846",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 17
+    },
+    {
+      "name": "Julian S.",
+      "knownFrom": "",
+      "age": 22,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/5c63feb7-d26c-4ef1-acea-bdedd9cf8938",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 18
+    },
+    {
+      "name": "Luke",
+      "knownFrom": "",
+      "age": 31,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/8a02d248-0fce-4d3c-92f1-753d62895b54",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 19
+    },
+    {
+      "name": "Meji",
+      "knownFrom": "",
+      "age": 24,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/f33ba878-505d-4944-b72a-3e610de57018",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 20
+    },
+    {
+      "name": "Noel",
+      "knownFrom": "",
+      "age": 27,
+      "status": "Aktiv",
+      "photoUrl": "https://directus.ayto-fans.de/assets/17a75cab-98bf-48b0-bea1-27f52603b12a",
+      "source": "",
+      "bio": "",
+      "gender": "M",
+      "socialMediaAccount": "",
+      "id": 21
+    }
+  ],
+  "matchingNights": [
+    {
+      "id": 1,
+      "name": "Matching Night #1",
+      "pairs": [
+        {
+          "woman": "Aurora",
+          "man": "Julian S."
+        },
+        {
+          "woman": "Adrianna",
+          "man": "Julian M."
+        },
+        {
+          "woman": "Elena",
+          "man": "Jerry"
+        },
+        {
+          "woman": "Tiziana",
+          "man": "Jeronymo"
+        },
+        {
+          "woman": "Marla",
+          "man": "Luke"
+        },
+        {
+          "woman": "Tonia",
+          "man": "Noel"
+        },
+        {
+          "woman": "Michelle",
+          "man": "Ema"
+        },
+        {
+          "woman": "Laura",
+          "man": "Evi"
+        },
+        {
+          "woman": "Ella",
+          "man": "Meji"
+        },
+        {
+          "woman": "Linda",
+          "man": "Chris"
+        }
+      ],
+      "totalLights": 3,
+      "ausstrahlungsdatum": "2026-01-27",
+      "ausstrahlungszeit": "21:00"
+    },
+    {
+      "id": 2,
+      "name": "Matching Night #2",
+      "pairs": [
+        {
+          "woman": "Tonia",
+          "man": "Chris"
+        },
+        {
+          "woman": "Tiziana",
+          "man": "Jeronymo"
+        },
+        {
+          "woman": "Adrianna",
+          "man": "Julian S."
+        },
+        {
+          "woman": "Ella",
+          "man": "Ema"
+        },
+        {
+          "woman": "Alicia",
+          "man": "Julian M."
+        },
+        {
+          "woman": "Linda",
+          "man": "Noel"
+        },
+        {
+          "woman": "Elena",
+          "man": "Meji"
+        },
+        {
+          "woman": "Marla",
+          "man": "Luke"
+        },
+        {
+          "woman": "Michelle",
+          "man": "Jerry"
+        },
+        {
+          "woman": "Laura",
+          "man": "Evi"
+        }
+      ],
+      "totalLights": 2,
+      "ausstrahlungsdatum": "2026-02-03",
+      "ausstrahlungszeit": "21:00"
+    }
+  ],
+  "matchboxes": [
+    {
+      "id": 1,
+      "woman": "Tiziana",
+      "man": "Evi",
+      "matchType": "no-match",
+      "price": 0,
+      "buyer": "",
+      "ausstrahlungsdatum": "2026-01-27",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-02-03T20:58:13.952Z",
+      "updatedAt": "2026-02-03T20:58:13.952Z"
+    },
+    {
+      "id": 2,
+      "woman": "Laura",
+      "man": "Evi",
+      "matchType": "sold",
+      "price": 5000,
+      "buyer": "Aurora",
+      "ausstrahlungsdatum": "2026-02-03",
+      "ausstrahlungszeit": "20:15",
+      "createdAt": "2026-02-03T20:58:32.266Z",
+      "updatedAt": "2026-02-03T21:23:08.201Z"
+    }
+  ],
+  "penalties": [],
+  "probabilityCache": [],
+  "broadcastNotes": [],
+  "exportedAt": "2026-02-03T22:29:35.439Z",
+  "version": "0.0.1",
+  "deploymentReady": true
+}

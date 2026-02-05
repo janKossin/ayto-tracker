@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Drawer,
@@ -11,13 +11,11 @@ import {
   ListItemIcon,
   ListItemText,
   IconButton,
-  useTheme,
-  useMediaQuery,
   Card,
   Avatar,
   Chip,
-  Tooltip
-} from '@mui/material'
+  Tooltip,
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   Dashboard as DashboardIcon,
@@ -29,29 +27,32 @@ import {
   Favorite as FavoriteIcon,
   LightMode as LightModeIcon,
   Home as HomeIcon,
-  Savings as SavingsIcon
-} from '@mui/icons-material'
-import { db } from '@/lib/db'
+  Savings as SavingsIcon,
+} from "@mui/icons-material";
+import { ParticipantService } from "@/services/participantService";
+import { MatchboxService } from "@/services/matchboxService";
+import { MatchingNightService } from "@/services/matchingNightService";
+import { PenaltyService } from "@/services/penaltyService";
 
-const drawerWidth = 260
+const drawerWidth = 260;
 
 interface AdminLayoutProps {
-  children: React.ReactNode
-  activeTab?: string
-  onTabChange?: (tab: string) => void
-  onDataUpdate?: () => void // Callback für Daten-Updates
+  children: React.ReactNode;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+  onDataUpdate?: () => void; // Callback für Daten-Updates
 }
 
-const AdminLayout: React.FC<AdminLayoutProps> = ({ 
-  children, 
-  activeTab = 'participants',
+const AdminLayout: React.FC<AdminLayoutProps> = ({
+  children,
+  activeTab = "participants",
   onTabChange,
-  onDataUpdate
+  onDataUpdate,
 }) => {
-  const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
-  console.log('Mobile:', isMobile) // Keep for responsive debugging
-  const [mobileOpen, setMobileOpen] = useState(false)
+  // const theme = useTheme();
+  // const isMobile = useMediaQuery(theme.breakpoints.down('lg'))
+  // console.log('Mobile:', isMobile) // Keep for responsive debugging
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   // Stats für Menüleiste
   const [stats, setStats] = useState({
@@ -60,141 +61,170 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
     currentLights: 0,
     currentBalance: 0,
     matchingNightsCount: 0,
-    matchboxesCount: 0
-  })
+    matchboxesCount: 0,
+  });
 
+  // Expose loadStats to be called on data update
   const loadStats = async () => {
     try {
-      // Lade Daten direkt aus IndexedDB
-      const [participants, matchboxes, matchingNights, penalties] = await Promise.all([
-        db.participants.toArray(),
-        db.matchboxes.toArray(),
-        db.matchingNights.toArray(),
-        db.penalties.toArray()
-      ])
+      // Lade Daten via Services
+      const [participants, matchboxes, matchingNights, penalties] =
+        await Promise.all([
+          ParticipantService.getAllParticipants(),
+          MatchboxService.getAllMatchboxes(),
+          MatchingNightService.getAllMatchingNights(),
+          PenaltyService.getAllPenalties(),
+        ]);
 
-      const activeParticipants = participants.filter(p => p.active !== false).length
-      const matchingNightsCount = matchingNights.length
-      const matchboxesCount = matchboxes.length
-      const perfectMatches = matchboxes.filter(mb => mb.matchType === 'perfect').length
-      const lastMN = matchingNights
-        .sort((a, b) => {
-          const dateA = a.ausstrahlungsdatum ? new Date(a.ausstrahlungsdatum).getTime() : new Date(a.createdAt).getTime()
-          const dateB = b.ausstrahlungsdatum ? new Date(b.ausstrahlungsdatum).getTime() : new Date(b.createdAt).getTime()
-          return dateB - dateA
-        })[0]
-      const currentLights = lastMN?.totalLights || 0
-      
-      // Debug-Ausgabe für Lichter-Berechnung
-      console.log('🔍 Admin Header Lichter-Debug:', {
-        matchingNightsCount: matchingNights.length,
+      const activeParticipants = participants.filter(
+        (p) => p.active !== false,
+      ).length;
+      const matchingNightsCount = matchingNights.length;
+      const matchboxesCount = matchboxes.length;
+      const perfectMatches = matchboxes.filter(
+        (mb) => mb.matchType === "perfect",
+      ).length;
+      const lastMN = matchingNights.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+      )[0];
+      const currentLights = lastMN?.totalLights || 0;
+
+      console.log("📊 Admin Header Stats:", {
+        activeParticipants,
+        matchingNightsCount,
         lastMatchingNight: lastMN?.name,
         lastMatchingNightLights: lastMN?.totalLights,
         currentLights,
-        allMatchingNights: matchingNights.map(mn => ({ name: mn.name, lights: mn.totalLights, date: mn.createdAt || mn.date }))
-      })
+        allMatchingNights: matchingNights.map((mn) => ({
+          name: mn.name,
+          lights: mn.totalLights,
+          date: mn.createdAt || mn.date,
+        })),
+      });
 
-      const sold = matchboxes.filter(mb => mb.matchType === 'sold' && typeof mb.price === 'number')
-      const totalRevenue = sold.reduce((sum, mb) => sum + (mb.price || 0), 0)
-      const totalPenalties = penalties.reduce((sum, p) => (p.amount < 0 ? sum + Math.abs(p.amount) : sum), 0)
-      const totalCredits = penalties.reduce((sum, p) => (p.amount > 0 ? sum + p.amount : sum), 0)
-      const savedBudget = typeof window !== 'undefined' ? localStorage.getItem('ayto-starting-budget') : null
-      const startingBudget = savedBudget ? parseInt(savedBudget, 10) : 200000
-      const currentBalance = startingBudget - totalRevenue - totalPenalties + totalCredits
+      const sold = matchboxes.filter(
+        (mb) => mb.matchType === "sold" && typeof mb.price === "number",
+      );
+      const totalRevenue = sold.reduce(
+        (sum: number, mb) => sum + (mb.price || 0),
+        0,
+      );
+      const totalPenalties = penalties.reduce(
+        (sum: number, p) => (p.amount < 0 ? sum + Math.abs(p.amount) : sum),
+        0,
+      );
+      const totalCredits = penalties.reduce(
+        (sum: number, p) => (p.amount > 0 ? sum + p.amount : sum),
+        0,
+      );
+      const savedBudget =
+        typeof window !== "undefined"
+          ? localStorage.getItem("ayto-starting-budget")
+          : null;
+      const startingBudget = savedBudget ? parseInt(savedBudget, 10) : 200000;
+      const currentBalance =
+        startingBudget - totalRevenue - totalPenalties + totalCredits;
 
-      setStats({ activeParticipants, perfectMatches, currentLights, currentBalance, matchingNightsCount, matchboxesCount })
-      
-      console.log('✅ Admin Header: Statistiken direkt aus IndexedDB geladen')
+      setStats({
+        activeParticipants,
+        perfectMatches,
+        currentLights,
+        currentBalance,
+        matchingNightsCount,
+        matchboxesCount,
+      });
+
+      console.log("✅ Admin Header: Statistiken via API geladen");
     } catch (error) {
-      console.error('❌ Fehler beim Laden der Header-Statistiken aus IndexedDB:', error)
+      console.error("❌ Fehler beim Laden der Header-Statistiken:", error);
     }
-  }
+  };
 
   useEffect(() => {
-    loadStats()
-    
+    loadStats();
+
     // Budget-Änderungen via storage-Event
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'ayto-starting-budget') {
-        loadStats()
+      if (e.key === "ayto-starting-budget") {
+        loadStats();
       }
-    }
-    window.addEventListener('storage', onStorage)
+    };
+    window.addEventListener("storage", onStorage);
 
     // Intervall für periodische Updates (alle 30 Sekunden)
     const updateInterval = setInterval(() => {
-      loadStats()
-    }, 30000)
+      loadStats();
+    }, 30000);
 
     return () => {
-      window.removeEventListener('storage', onStorage)
-      clearInterval(updateInterval)
-    }
-  }, [])
+      window.removeEventListener("storage", onStorage);
+      clearInterval(updateInterval);
+    };
+  }, []);
 
   // Reagiere auf Daten-Updates vom AdminPanel
   useEffect(() => {
     if (onDataUpdate) {
-      loadStats()
+      loadStats();
     }
-  }, [onDataUpdate])
+  }, [onDataUpdate]);
 
   const handleDrawerToggle = () => {
-    setMobileOpen(!mobileOpen)
-  }
+    setMobileOpen(!mobileOpen);
+  };
 
   const menuItems = [
     {
-      text: 'Dashboard',
+      text: "Dashboard",
       icon: <DashboardIcon />,
-      value: 'dashboard',
-      disabled: true
+      value: "dashboard",
+      disabled: true,
     },
     {
-      text: 'Kandidat*innen',
+      text: "Kandidat*innen",
       icon: <PeopleIcon />,
-      value: 'participants'
+      value: "participants",
     },
     {
-      text: 'Matching Nights',
+      text: "Matching Nights",
       icon: <NightlifeIcon />,
-      value: 'matching-nights'
+      value: "matching-nights",
     },
     {
-      text: 'Matchbox',
+      text: "Matchbox",
       icon: <InventoryIcon />,
-      value: 'matchbox'
+      value: "matchbox",
     },
     {
-      text: 'Ausstrahlung',
+      text: "Ausstrahlung",
       icon: <ScheduleIcon />,
-      value: 'broadcast'
+      value: "broadcast",
     },
     {
-      text: 'Budget & Stafen',
+      text: "Budget & Stafen",
       icon: <SavingsIcon />,
-      value: 'settings'
+      value: "settings",
     },
     {
-      text: 'Datenhaltung',
+      text: "Datenhaltung",
       icon: <ImportExportIcon />,
-      value: 'json-import'
+      value: "json-import",
     },
     // entfernt: doppelter 'Einstellungen'-Eintrag
-  ]
+  ];
 
   const drawer = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
       {/* Logo/Brand */}
-      <Box sx={{ p: 3, borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Avatar 
-            sx={{ 
-              bgcolor: 'primary.main',
+      <Box sx={{ p: 3, borderBottom: "1px solid", borderColor: "divider" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Avatar
+            sx={{
+              bgcolor: "primary.main",
               width: 40,
               height: 40,
-              fontSize: '1.25rem',
-              fontWeight: 600
+              fontSize: "1.25rem",
+              fontWeight: 600,
             }}
           >
             A
@@ -214,18 +244,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
       <Box sx={{ flex: 1, py: 2 }}>
         <List sx={{ px: 2, pt: 0 }}>
           {menuItems.map((item, index) => (
-            <ListItem 
-              key={item.value} 
-              disablePadding 
-              sx={{ 
+            <ListItem
+              key={item.value}
+              disablePadding
+              sx={{
                 mb: 0.5,
-                pl: index > 0 ? 2 : 0 // Einrücken für alle Items nach Dashboard
+                pl: index > 0 ? 2 : 0, // Einrücken für alle Items nach Dashboard
               }}
             >
               <ListItemButton
                 onClick={() => {
                   if (!item.disabled) {
-                    onTabChange?.(item.value)
+                    onTabChange?.(item.value);
                   }
                 }}
                 disabled={item.disabled}
@@ -233,34 +263,47 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
                   borderRadius: 1.5,
                   px: 2,
                   py: 1.5,
-                  backgroundColor: activeTab === item.value ? 'primary.main' : 'transparent',
-                  color: activeTab === item.value ? 'primary.contrastText' : 'text.primary',
-                  '&:hover': {
-                    backgroundColor: activeTab === item.value 
-                      ? 'primary.dark' 
-                      : item.disabled ? 'transparent' : 'action.hover'
+                  backgroundColor:
+                    activeTab === item.value ? "primary.main" : "transparent",
+                  color:
+                    activeTab === item.value
+                      ? "primary.contrastText"
+                      : "text.primary",
+                  "&:hover": {
+                    backgroundColor:
+                      activeTab === item.value
+                        ? "primary.dark"
+                        : item.disabled
+                          ? "transparent"
+                          : "action.hover",
                   },
-                  '&.Mui-disabled': {
+                  "&.Mui-disabled": {
                     opacity: 1,
-                    color: activeTab === item.value ? 'primary.contrastText' : 'text.primary',
-                    cursor: 'default'
-                  }
+                    color:
+                      activeTab === item.value
+                        ? "primary.contrastText"
+                        : "text.primary",
+                    cursor: "default",
+                  },
                 }}
               >
-                <ListItemIcon 
-                  sx={{ 
-                    color: 'inherit',
-                    minWidth: 40
+                <ListItemIcon
+                  sx={{
+                    color: "inherit",
+                    minWidth: 40,
                   }}
                 >
                   {item.icon}
                 </ListItemIcon>
-                <ListItemText 
-                  primary={item.text} 
+                <ListItemText
+                  primary={item.text}
                   primaryTypographyProps={{
-                    fontSize: '0.875rem',
+                    fontSize: "0.875rem",
                     fontWeight: activeTab === item.value ? 600 : 500,
-                    color: activeTab === item.value ? 'common.white' : 'text.primary'
+                    color:
+                      activeTab === item.value
+                        ? "common.white"
+                        : "text.primary",
                   }}
                 />
               </ListItemButton>
@@ -271,87 +314,152 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
 
       {/* User Info - deaktiviert, wird später benötigt */}
       {false && (
-      <Box sx={{ p: 3, borderTop: '1px solid', borderColor: 'divider' }}>
-        <Card sx={{ p: 2, bgcolor: 'grey.50' }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            <Avatar sx={{ width: 32, height: 32, bgcolor: 'primary.main' }}>
-              A
-            </Avatar>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                Admin User
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                admin@ayto.com
-              </Typography>
+        <Box sx={{ p: 3, borderTop: "1px solid", borderColor: "divider" }}>
+          <Card sx={{ p: 2, bgcolor: "grey.50" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Avatar sx={{ width: 32, height: 32, bgcolor: "primary.main" }}>
+                A
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  Admin User
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  admin@ayto.com
+                </Typography>
+              </Box>
             </Box>
-          </Box>
-        </Card>
-      </Box>
+          </Card>
+        </Box>
       )}
     </Box>
-  )
+  );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: "flex", minHeight: "100vh" }}>
       {/* App Bar */}
       <AppBar
         position="fixed"
         sx={{
           width: { lg: `calc(100% - ${drawerWidth}px)` },
           ml: { lg: `${drawerWidth}px` },
-          bgcolor: 'background.paper',
-          color: 'text.primary',
-          boxShadow: '0px 2px 4px rgba(165, 163, 174, 0.3)',
-          borderBottom: '1px solid',
-          borderColor: 'divider'
+          bgcolor: "background.paper",
+          color: "text.primary",
+          boxShadow: "0px 2px 4px rgba(165, 163, 174, 0.3)",
+          borderBottom: "1px solid",
+          borderColor: "divider",
         }}
       >
-        <Toolbar sx={{ minHeight: '64px !important' }}>
+        <Toolbar sx={{ minHeight: "64px !important" }}>
           <IconButton
             color="inherit"
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { lg: 'none' } }}
+            sx={{ mr: 2, display: { lg: "none" } }}
           >
             <MenuIcon />
           </IconButton>
           <Box sx={{ flexGrow: 1 }}>
             {/* Mobile: Two lines */}
-            <Box sx={{ display: { xs: 'flex', sm: 'none' }, flexDirection: 'column', lineHeight: 1.2 }}>
-              <Typography variant="h6" component="div" sx={{ fontWeight: 600, whiteSpace: 'nowrap' }}>
+            <Box
+              sx={{
+                display: { xs: "flex", sm: "none" },
+                flexDirection: "column",
+                lineHeight: 1.2,
+              }}
+            >
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{ fontWeight: 600, whiteSpace: "nowrap" }}
+              >
                 AYTO 2026
               </Typography>
-              <Typography variant="body2" component="div" sx={{ fontWeight: 500, color: 'text.secondary' }}>
+              <Typography
+                variant="body2"
+                component="div"
+                sx={{ fontWeight: 500, color: "text.secondary" }}
+              >
                 Admin
               </Typography>
             </Box>
             {/* Desktop: Single line */}
-            <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 600, display: { xs: 'none', sm: 'block' } }}>
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ fontWeight: 600, display: { xs: "none", sm: "block" } }}
+            >
               AYTO 2026 - Admin
             </Typography>
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mr: 2, flexWrap: 'wrap', justifyContent: 'flex-end', rowGap: 0.5 }}>
-            <Chip icon={<NightlifeIcon fontSize="small" />} label={`${stats.matchingNightsCount}`} size="small" color="primary" sx={{ fontWeight: 600 }} />
-            <Chip icon={<InventoryIcon fontSize="small" />} label={`${stats.matchboxesCount}`} size="small" color="secondary" sx={{ fontWeight: 600 }} />
-            <Chip icon={<FavoriteIcon fontSize="small" />} label={`${stats.perfectMatches}`} size="small" color="success" sx={{ fontWeight: 600 }} />
-            <Box sx={{ flexBasis: { xs: '100%', sm: 0 }, height: 0, margin: 0, padding: 0 }} />
-            <Chip icon={<LightModeIcon fontSize="small" />} label={`${stats.currentLights}`} size="small" color="warning" sx={{ fontWeight: 600 }} />
-            <Chip label={`${stats.currentBalance.toLocaleString('de-DE')} €`} size="small" color={stats.currentBalance >= 0 ? 'success' : 'error'} sx={{ fontWeight: 700 }} />
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1.5,
+              mr: 2,
+              flexWrap: "wrap",
+              justifyContent: "flex-end",
+              rowGap: 0.5,
+            }}
+          >
+            <Chip
+              icon={<NightlifeIcon fontSize="small" />}
+              label={`${stats.matchingNightsCount}`}
+              size="small"
+              color="primary"
+              sx={{ fontWeight: 600 }}
+            />
+            <Chip
+              icon={<InventoryIcon fontSize="small" />}
+              label={`${stats.matchboxesCount}`}
+              size="small"
+              color="secondary"
+              sx={{ fontWeight: 600 }}
+            />
+            <Chip
+              icon={<FavoriteIcon fontSize="small" />}
+              label={`${stats.perfectMatches}`}
+              size="small"
+              color="success"
+              sx={{ fontWeight: 600 }}
+            />
+            <Box
+              sx={{
+                flexBasis: { xs: "100%", sm: 0 },
+                height: 0,
+                margin: 0,
+                padding: 0,
+              }}
+            />
+            <Chip
+              icon={<LightModeIcon fontSize="small" />}
+              label={`${stats.currentLights}`}
+              size="small"
+              color="warning"
+              sx={{ fontWeight: 600 }}
+            />
+            <Chip
+              label={`${stats.currentBalance.toLocaleString("de-DE")} €`}
+              size="small"
+              color={stats.currentBalance >= 0 ? "success" : "error"}
+              sx={{ fontWeight: 700 }}
+            />
           </Box>
           <Tooltip title="Zur Startseite" arrow>
             <IconButton
               onClick={() => {
-                window.location.href = '/'
+                window.location.href = "/";
               }}
               sx={{
                 opacity: 0.6,
-                color: 'text.secondary',
-                '&:hover': {
+                color: "text.secondary",
+                "&:hover": {
                   opacity: 1,
-                  color: 'primary.main'
-                }
+                  color: "primary.main",
+                },
               }}
               aria-label="Zur Startseite"
             >
@@ -372,17 +480,17 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
-            keepMounted: true
+            keepMounted: true,
           }}
           sx={{
-            display: { xs: 'block', lg: 'none' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
+            display: { xs: "block", lg: "none" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
               width: drawerWidth,
-              bgcolor: 'background.paper',
-              borderRight: '1px solid',
-              borderColor: 'divider'
-            }
+              bgcolor: "background.paper",
+              borderRight: "1px solid",
+              borderColor: "divider",
+            },
           }}
         >
           {drawer}
@@ -391,14 +499,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         <Drawer
           variant="permanent"
           sx={{
-            display: { xs: 'none', lg: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
+            display: { xs: "none", lg: "block" },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
               width: drawerWidth,
-              bgcolor: 'background.paper',
-              borderRight: '1px solid',
-              borderColor: 'divider'
-            }
+              bgcolor: "background.paper",
+              borderRight: "1px solid",
+              borderColor: "divider",
+            },
           }}
           open
         >
@@ -412,17 +520,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({
         sx={{
           flexGrow: 1,
           width: { lg: `calc(100% - ${drawerWidth}px)` },
-          bgcolor: 'background.default',
-          minHeight: '100vh'
+          bgcolor: "background.default",
+          minHeight: "100vh",
         }}
       >
-        <Toolbar sx={{ minHeight: '64px !important' }} />
-        <Box sx={{ p: 3 }}>
-          {children}
-        </Box>
+        <Toolbar sx={{ minHeight: "64px !important" }} />
+        <Box sx={{ p: 3 }}>{children}</Box>
       </Box>
     </Box>
-  )
-}
+  );
+};
 
-export default AdminLayout
+export default AdminLayout;

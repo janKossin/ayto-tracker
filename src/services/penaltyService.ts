@@ -5,7 +5,7 @@
  * Trennt UI von Business Logic.
  */
 
-import { db } from '@/lib/db'
+import { ApiClient } from '@/lib/api-client'
 import type { Penalty, PenaltyDTO } from '@/types'
 
 export class PenaltyService {
@@ -13,39 +13,42 @@ export class PenaltyService {
    * Lädt alle Penalties aus der Datenbank
    */
   static async getAllPenalties(): Promise<Penalty[]> {
-    return await db.penalties.toArray()
+    const dtos = await ApiClient.get('/penalties') as PenaltyDTO[]
+    return dtos.map(dto => this.fromDTO(dto))
   }
 
   /**
    * Lädt Penalties nach Teilnehmer
    */
   static async getPenaltiesByParticipant(participantName: string): Promise<Penalty[]> {
-    return await db.penalties.where('participantName').equals(participantName).toArray()
+    const all = await this.getAllPenalties()
+    return all.filter(p => p.participantName === participantName)
   }
 
   /**
    * Erstellt eine neue Penalty
    */
   static async createPenalty(penalty: Omit<Penalty, 'id' | 'createdAt'>): Promise<number> {
-    const newPenalty: Omit<Penalty, 'id'> = {
+    const newPenalty = {
       ...penalty,
       createdAt: new Date()
     }
-    return await db.penalties.add(newPenalty)
+    const result = await ApiClient.post('/penalties', newPenalty)
+    return result.id
   }
 
   /**
    * Aktualisiert eine Penalty
    */
   static async updatePenalty(id: number, updates: Partial<Penalty>): Promise<void> {
-    await db.penalties.update(id, updates)
+    await ApiClient.put(`/penalties/${id}`, updates)
   }
 
   /**
    * Löscht eine Penalty
    */
   static async deletePenalty(id: number): Promise<void> {
-    await db.penalties.delete(id)
+    await ApiClient.delete(`/penalties/${id}`)
   }
 
   /**
@@ -129,7 +132,8 @@ export class PenaltyService {
    * Lädt Penalties nach Grund
    */
   static async getPenaltiesByReason(reason: string): Promise<Penalty[]> {
-    return await db.penalties.where('reason').equals(reason).toArray()
+    const all = await this.getAllPenalties()
+    return all.filter(p => p.reason === reason)
   }
 
   /**

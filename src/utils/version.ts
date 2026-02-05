@@ -11,8 +11,8 @@ export interface VersionInfo {
 export const VERSION_INFO: VersionInfo = {
   "version": "0.0.1",
   "gitTag": null,
-  "gitCommit": "a3cd9d163ea32488d413982e93dc3fe2b0b39d4f",
-  "buildDate": "2026-02-03T19:11:25.090Z",
+  "gitCommit": "aae0e9f498673f1db4bf722e932e87ad15393fcc",
+  "buildDate": "2026-02-05T16:59:12.925Z",
   "isProduction": false
 }
 

@@ -5,7 +5,7 @@
  * Trennt UI von Business Logic.
  */
 
-import { db } from '@/lib/db'
+import { ApiClient } from '@/lib/api-client'
 import type { Matchbox, MatchboxDTO, MatchType } from '@/types'
 import { createBroadcastDateTime, sortBroadcastsChronologically, ensureMatchboxBroadcastData } from '@/utils/broadcastUtils'
 
@@ -14,7 +14,8 @@ export class MatchboxService {
    * Lädt alle Matchboxes aus der Datenbank
    */
   static async getAllMatchboxes(): Promise<Matchbox[]> {
-    return await db.matchboxes.toArray()
+    const dtos = await ApiClient.get('/matchboxes') as MatchboxDTO[]
+    return dtos.map(dto => this.fromDTO(dto))
   }
 
   /**
@@ -33,7 +34,8 @@ export class MatchboxService {
    * Lädt Matchboxes nach Typ
    */
   static async getMatchboxesByType(type: MatchType): Promise<Matchbox[]> {
-    return await db.matchboxes.where('matchType').equals(type).toArray()
+    const all = await this.getAllMatchboxes()
+    return all.filter(mb => mb.matchType === type)
   }
 
   /**
@@ -66,7 +68,7 @@ export class MatchboxService {
     // Stelle sicher, dass Ausstrahlungsdaten gesetzt sind
     const matchboxWithBroadcastData = ensureMatchboxBroadcastData(matchbox)
     
-    const newMatchbox: Omit<Matchbox, 'id'> = {
+    const newMatchbox = {
       ...matchboxWithBroadcastData,
       createdAt: now,
       updatedAt: now,
@@ -75,7 +77,8 @@ export class MatchboxService {
     }
     
     console.log('🔧 MatchboxService: Erstelle neue Matchbox mit Ausstrahlungsdaten:', newMatchbox)
-    return await db.matchboxes.add(newMatchbox)
+    const result = await ApiClient.post('/matchboxes', newMatchbox)
+    return result.id
   }
 
   /**
@@ -86,14 +89,14 @@ export class MatchboxService {
       ...updates,
       updatedAt: new Date()
     }
-    await db.matchboxes.update(id, updateData)
+    await ApiClient.put(`/matchboxes/${id}`, updateData)
   }
 
   /**
    * Löscht eine Matchbox
    */
   static async deleteMatchbox(id: number): Promise<void> {
-    await db.matchboxes.delete(id)
+    await ApiClient.delete(`/matchboxes/${id}`)
   }
 
   /**

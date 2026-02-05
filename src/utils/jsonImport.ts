@@ -1,4 +1,10 @@
-import { db, type Participant, type Matchbox, type MatchingNight, type Penalty, type BroadcastNote } from '../lib/db'
+import { ApiClient } from '@/lib/api-client';
+import { ParticipantService } from '@/services/participantService';
+import { MatchingNightService } from '@/services/matchingNightService';
+import { MatchboxService } from '@/services/matchboxService';
+import { PenaltyService } from '@/services/penaltyService';
+import { BroadcastNoteService } from '@/services/broadcastNoteService';
+import type { Participant, Matchbox, MatchingNight, Penalty, BroadcastNote } from '@/types';
 
 // Interface für die JSON-Import-Daten
 export interface JsonImportData {
@@ -10,7 +16,7 @@ export interface JsonImportData {
 }
 
 /**
- * Lädt eine spezifische JSON-Datei und importiert die Daten in die Datenbank
+ * Lädt eine spezifische JSON-Datei und importiert die Daten in die Datenbank via API
  * @param fileName - Der Name der JSON-Datei (z.B. "ayto-complete-export-2025-09-08.json")
  * @param version - Die Version für die neue JSON-Datei (z.B. "0.2.1")
  * @returns Promise<boolean> - true wenn erfolgreich, false bei Fehler
@@ -26,13 +32,9 @@ export async function importJsonDataForVersion(fileName: string, version: string
     
     const rawData: unknown = await response.json()
     
-    // Unterstütze beide Formate:
-    // 1. Objekt-Format: { participants: [...], matchboxes: [...], ... }
-    // 2. Array-Format: [...] (nur Teilnehmer)
     let jsonData: JsonImportData
     
     if (Array.isArray(rawData)) {
-      // Array-Format: Direktes Array von Teilnehmern
       console.log(`📥 JSON-Datei im Array-Format erkannt (${rawData.length} Teilnehmer)`)
       jsonData = {
         participants: rawData as Participant[],
@@ -41,132 +43,108 @@ export async function importJsonDataForVersion(fileName: string, version: string
         penalties: []
       }
     } else if (rawData && typeof rawData === 'object' && 'participants' in rawData) {
-      // Objekt-Format: Vollständige Datenstruktur
       console.log(`📥 JSON-Datei im Objekt-Format erkannt`)
       jsonData = rawData as JsonImportData
     } else {
       throw new Error('Ungültiges JSON-Format: Erwartet wird entweder ein Array von Teilnehmern oder ein Objekt mit participants, matchboxes, etc.')
     }
     
-    // Lösche alle bestehenden Daten
-    await db.transaction('rw', [db.participants, db.matchboxes, db.matchingNights, db.penalties], async () => {
-      await db.participants.clear()
-      await db.matchboxes.clear()
-      await db.matchingNights.clear()
-      await db.penalties.clear()
-    })
-    
-    // Normalisiere und importiere Teilnehmer
-    await db.transaction('rw', [db.participants, db.matchboxes, db.matchingNights, db.penalties], async () => {
-      if (jsonData.participants && jsonData.participants.length > 0) {
-        // Normalisiere Teilnehmer-Daten
-        const normalizedParticipants = jsonData.participants.map((participant: any) => {
-          // Gender-Mapping: w/m -> F/M
-          let gender = participant.gender
-          if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
-            gender = 'F'
-          } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
-            gender = 'M'
-          }
-          
-          // Status normalisieren (aktiv -> Aktiv, etc.)
-          let status = participant.status || 'Aktiv'
-          if (typeof status === 'string') {
-            const statusLower = status.toLowerCase()
-            if (statusLower === 'aktiv' || statusLower === 'active') {
-              status = 'Aktiv'
-            } else if (statusLower === 'inaktiv' || statusLower === 'inactive') {
-              status = 'Inaktiv'
-            } else if (statusLower === 'perfekt match' || statusLower === 'perfect match') {
-              status = 'Perfekt Match'
-            }
-          }
-          
-          // Stelle sicher, dass alle erforderlichen Felder vorhanden sind
-          return {
-            name: participant.name || 'Unbekannt',
-            knownFrom: participant.knownFrom || '',
-            age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
-            status: status,
-            active: participant.active !== false, // Default: aktiv
-            photoUrl: participant.photoUrl || '',
-            source: participant.source || '',
-            bio: participant.bio || '',
-            gender: gender || 'F', // Default: weiblich falls unbekannt
-            socialMediaAccount: participant.socialMediaAccount || '',
-            freeProfilePhotoUrl: participant.freeProfilePhotoUrl || '',
-            // ID beibehalten, falls vorhanden
-            ...(participant.id && { id: participant.id })
-          }
-        })
+    // Normalisiere Daten bevor sie an die API gesendet werden
+    const normalizedData: JsonImportData = {
+      participants: [],
+      matchboxes: [],
+      matchingNights: [],
+      penalties: [],
+      broadcastNotes: []
+    };
+
+    if (jsonData.participants && jsonData.participants.length > 0) {
+      normalizedData.participants = jsonData.participants.map((participant: any) => {
+        let gender = participant.gender;
+        if (gender === 'w' || gender === 'weiblich' || gender === 'female') {
+          gender = 'F';
+        } else if (gender === 'm' || gender === 'männlich' || gender === 'male') {
+          gender = 'M';
+        }
         
-        console.log(`✅ ${normalizedParticipants.length} Teilnehmer normalisiert und bereit zum Import`)
-        await db.participants.bulkPut(normalizedParticipants)
-      }
-      
-      if (jsonData.matchboxes && jsonData.matchboxes.length > 0) {
-        // Transformiere Matchbox-Daten: womanId/manId -> woman/man
-        const transformedMatchboxes = jsonData.matchboxes.map((matchbox: any) => ({
-          ...matchbox,
-          woman: matchbox.womanId || matchbox.woman,
-          man: matchbox.manId || matchbox.man,
-          // Entferne die alten Felder
-          womanId: undefined,
-          manId: undefined,
-          // Stelle sicher, dass createdAt und updatedAt gesetzt sind
-          createdAt: matchbox.createdAt ? new Date(matchbox.createdAt) : new Date(),
-          updatedAt: matchbox.updatedAt ? new Date(matchbox.updatedAt) : new Date()
-        }))
-        await db.matchboxes.bulkPut(transformedMatchboxes)
-      }
-      
-      if (jsonData.matchingNights && jsonData.matchingNights.length > 0) {
-        // Transformiere Matching Night-Daten
-        const transformedMatchingNights = jsonData.matchingNights.map((matchingNight: any) => ({
-          ...matchingNight,
-          // Stelle sicher, dass createdAt gesetzt ist
-          createdAt: matchingNight.createdAt ? new Date(matchingNight.createdAt) : new Date()
-        }))
-        await db.matchingNights.bulkPut(transformedMatchingNights)
-      }
-      
-      if (jsonData.penalties && jsonData.penalties.length > 0) {
-        // Transformiere Penalty-Daten
-        const transformedPenalties = jsonData.penalties.map((penalty: any) => ({
-          ...penalty,
-          // Stelle sicher, dass createdAt gesetzt ist
-          createdAt: penalty.createdAt ? new Date(penalty.createdAt) : new Date()
-        }))
-        await db.penalties.bulkPut(transformedPenalties)
-      }
-      
-      if (jsonData.broadcastNotes && jsonData.broadcastNotes.length > 0) {
-        // Transformiere Broadcast Notes-Daten
-        const transformedBroadcastNotes = jsonData.broadcastNotes.map((note: any) => ({
-          ...note,
-          // Stelle sicher, dass createdAt und updatedAt gesetzt sind
-          createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
-          updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date()
-        }))
-        await db.broadcastNotes.bulkPut(transformedBroadcastNotes)
-      }
-    })
+        let status = participant.status || 'Aktiv';
+        if (typeof status === 'string') {
+          const statusLower = status.toLowerCase();
+          if (statusLower === 'aktiv' || statusLower === 'active') {
+             status = 'Aktiv';
+          } else if (statusLower === 'inaktiv' || statusLower === 'inactive') {
+             status = 'Inaktiv';
+          } else if (statusLower === 'perfekt match' || statusLower === 'perfect match') {
+             status = 'Perfekt Match';
+          }
+        }
+        
+        return {
+          id: participant.id,
+          name: participant.name || 'Unbekannt',
+          knownFrom: participant.knownFrom || '',
+          age: participant.age ? parseInt(participant.age.toString(), 10) : undefined,
+          status: status,
+          active: participant.active !== false,
+          photoUrl: participant.photoUrl || '',
+          source: participant.source || '',
+          bio: participant.bio || '',
+          gender: gender || 'F',
+          socialMediaAccount: participant.socialMediaAccount || '',
+          freeProfilePhotoUrl: participant.freeProfilePhotoUrl || ''
+        };
+      });
+    }
+
+    if (jsonData.matchingNights && jsonData.matchingNights.length > 0) {
+      normalizedData.matchingNights = jsonData.matchingNights.map((night: any) => ({
+        ...night,
+        // Ensure date is present (backend requires it). Fallback to ausstrahlungsdatum or current date.
+        date: night.date || night.ausstrahlungsdatum || new Date().toISOString().split('T')[0],
+        createdAt: night.createdAt ? new Date(night.createdAt) : new Date()
+      }));
+    }
+
+    if (jsonData.matchboxes && jsonData.matchboxes.length > 0) {
+      normalizedData.matchboxes = jsonData.matchboxes.map((box: any) => ({
+        ...box,
+        woman: box.womanId || box.woman,
+        man: box.manId || box.man,
+        womanId: undefined, // Remove old fields
+        manId: undefined,
+        createdAt: box.createdAt ? new Date(box.createdAt) : new Date(),
+        updatedAt: box.updatedAt ? new Date(box.updatedAt) : new Date()
+      }));
+    }
+
+    if (jsonData.penalties && jsonData.penalties.length > 0) {
+      normalizedData.penalties = jsonData.penalties.map((penalty: any) => ({
+        ...penalty,
+        createdAt: penalty.createdAt ? new Date(penalty.createdAt) : new Date()
+      }));
+    }
+
+    if (jsonData.broadcastNotes && jsonData.broadcastNotes.length > 0) {
+      normalizedData.broadcastNotes = jsonData.broadcastNotes.map((note: any) => ({
+        ...note,
+        createdAt: note.createdAt ? new Date(note.createdAt) : new Date(),
+        updatedAt: note.updatedAt ? new Date(note.updatedAt) : new Date()
+      }));
+    }
+
+    // Sende Daten an Backend API mit clearBeforeImport Flag
+    await ApiClient.post('/import', {
+      ...normalizedData,
+      clearBeforeImport: true
+    });
     
-    // Lade Datenzählungen nach dem Import
-    const [participantsCount, matchboxesCount, matchingNightsCount, penaltiesCount] = await Promise.all([
-      db.participants.count(),
-      db.matchboxes.count(),
-      db.matchingNights.count(),
-      db.penalties.count()
-    ])
+    console.log(`✅ JSON-Daten erfolgreich für Version ${version} via API importiert`);
+    console.log(`   📊 ${normalizedData.participants.length} Teilnehmer`);
+    console.log(`   📊 ${normalizedData.matchboxes.length} Matchboxes`);
+    console.log(`   📊 ${normalizedData.matchingNights.length} Matching Nights`);
+    console.log(`   📊 ${normalizedData.penalties.length} Strafen`);
     
-    console.log(`✅ JSON-Daten erfolgreich für Version ${version} importiert:`)
-    console.log(`   📊 ${participantsCount} Teilnehmer`)
-    console.log(`   📊 ${matchboxesCount} Matchboxes`)
-    console.log(`   📊 ${matchingNightsCount} Matching Nights`)
-    console.log(`   📊 ${penaltiesCount} Strafen`)
-    
-    return true
+    return true;
     
   } catch (error) {
     console.error('❌ Fehler beim Importieren der JSON-Daten:', error)
@@ -175,22 +153,14 @@ export async function importJsonDataForVersion(fileName: string, version: string
   }
 }
 
-/**
- * Erstellt eine neue Version mit JSON-Import
- * @param fileName - Der Name der JSON-Datei
- * @param version - Die neue Versionsnummer
- * @returns Promise<boolean> - true wenn erfolgreich
- */
 export async function createVersionWithJsonImport(fileName: string, version: string): Promise<boolean> {
   try {
-    // 1. JSON-Daten importieren
     const importSuccess = await importJsonDataForVersion(fileName, version)
     
     if (!importSuccess) {
       throw new Error('JSON-Import fehlgeschlagen')
     }
     
-    // 2. Version-Info aktualisieren (wird normalerweise vom Build-Script gemacht)
     console.log(`✅ Version ${version} mit JSON-Import aus ${fileName} erfolgreich erstellt`)
     return true
     
@@ -200,22 +170,16 @@ export async function createVersionWithJsonImport(fileName: string, version: str
   }
 }
 
-/**
- * Exportiert den aktuellen Datenbankstand und macht ihn für alle verfügbar
- * @returns Promise<{success: boolean, fileName?: string, error?: string}>
- */
 export async function exportCurrentDatabaseState(): Promise<{success: boolean, fileName?: string, error?: string}> {
   try {
-    // Alle Daten aus der Datenbank laden
     const [participantsData, matchingNightsData, matchboxesData, penaltiesData, broadcastNotesData] = await Promise.all([
-      db.participants.toArray(),
-      db.matchingNights.toArray(),
-      db.matchboxes.toArray(),
-      db.penalties.toArray(),
-      db.broadcastNotes.toArray()
+      ParticipantService.getAllParticipants(),
+      MatchingNightService.getAllMatchingNights(),
+      MatchboxService.getAllMatchboxes(),
+      PenaltyService.getAllPenalties(),
+      BroadcastNoteService.getAllBroadcastNotes()
     ])
     
-    // Matchbox-Daten für Export verwenden (keine Transformation mehr nötig)
     const transformedMatchboxes = matchboxesData.map(m => ({
       id: m.id,
       woman: m.woman,
@@ -229,7 +193,6 @@ export async function exportCurrentDatabaseState(): Promise<{success: boolean, f
       updatedAt: m.updatedAt
     }))
     
-    // Komplette Datenstruktur erstellen
     const allData: JsonImportData = {
       participants: participantsData,
       matchingNights: matchingNightsData,
@@ -238,14 +201,9 @@ export async function exportCurrentDatabaseState(): Promise<{success: boolean, f
       broadcastNotes: broadcastNotesData
     }
     
-    // Dateiname mit aktuellem Datum erstellen
     const today = new Date().toISOString().split('T')[0]
     const fileName = `ayto-complete-export-${today}.json`
-    
-    // JSON-String erstellen
     const jsonString = JSON.stringify(allData, null, 2)
-    
-    // Blob erstellen und Download auslösen
     const blob = new Blob([jsonString], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
@@ -254,13 +212,7 @@ export async function exportCurrentDatabaseState(): Promise<{success: boolean, f
     a.click()
     URL.revokeObjectURL(url)
     
-    // Index.json aktualisieren (simuliert - in echter App würde das über Server passieren)
     await updateIndexJson(fileName)
-    
-    const totalItems = participantsData.length + matchingNightsData.length + matchboxesData.length + penaltiesData.length + broadcastNotesData.length
-    console.log(`✅ Datenbankstand exportiert: ${fileName}`)
-    console.log(`📊 ${participantsData.length} Teilnehmer, ${matchingNightsData.length} Matching Nights, ${matchboxesData.length} Matchboxes, ${penaltiesData.length} Strafen, ${broadcastNotesData.length} Notizen`)
-    console.log(`📈 Gesamt: ${totalItems} Einträge`)
     
     return { success: true, fileName }
     
@@ -273,13 +225,8 @@ export async function exportCurrentDatabaseState(): Promise<{success: boolean, f
   }
 }
 
-/**
- * Aktualisiert die index.json mit der neuesten Export-Datei
- * @param fileName - Name der neuen Export-Datei
- */
 async function updateIndexJson(fileName: string): Promise<void> {
   try {
-    // Lade aktuelle index.json
     const response = await fetch('/json/index.json')
     let currentFiles: string[] = []
     
@@ -290,28 +237,18 @@ async function updateIndexJson(fileName: string): Promise<void> {
       }
     }
     
-    // Neue Datei hinzufügen, falls nicht bereits vorhanden
     if (!currentFiles.includes(fileName)) {
-      currentFiles.unshift(fileName) // An den Anfang der Liste setzen
-      
-      // Nur die neuesten 5 Dateien behalten
+      currentFiles.unshift(fileName)
       currentFiles = currentFiles.slice(0, 5)
-      
       console.log(`📝 Index.json würde aktualisiert werden mit:`, currentFiles)
-      console.log(`ℹ️ In einer echten App würde hier die index.json auf dem Server aktualisiert werden`)
     }
   } catch (error) {
     console.warn('⚠️ Konnte index.json nicht aktualisieren:', error)
   }
 }
 
-/**
- * Lädt verfügbare JSON-Dateien dynamisch
- * @returns Promise<string[]> - Liste der verfügbaren JSON-Dateien
- */
 export async function getAvailableJsonFiles(): Promise<string[]> {
   try {
-    // Optionales Manifest unter /public/json/index.json verwenden (nur akzeptieren, wenn JSON)
     const manifestResponse = await fetch('/json/index.json', { cache: 'no-store' })
     if (manifestResponse.ok) {
       const manifestType = manifestResponse.headers.get('content-type') || ''
@@ -319,26 +256,23 @@ export async function getAvailableJsonFiles(): Promise<string[]> {
         console.warn('Manifest /json/index.json hat unerwarteten Content-Type:', manifestType)
       } else {
         const files: unknown = await manifestResponse.json()
-      if (Array.isArray(files)) {
-        // Nur tatsächlich erreichbare JSON-Dateien zurückgeben (Content-Type prüfen)
-        const checks = await Promise.all(files.map(async (name) => {
-          try {
-            if (typeof name !== 'string') return null
-            const url = `/json/${name}`
-            const res = await fetch(url, { cache: 'no-store' })
-            if (!res.ok) return null
-            const type = res.headers.get('content-type') || ''
-            return type.includes('application/json') ? name : null
-          } catch {
-            return null
-          }
-        }))
-        return checks.filter((n): n is string => Boolean(n))
-      }
+        if (Array.isArray(files)) {
+          const checks = await Promise.all(files.map(async (name) => {
+            try {
+              if (typeof name !== 'string') return null
+              const url = `/json/${name}`
+              const res = await fetch(url, { cache: 'no-store' })
+              if (!res.ok) return null
+              const type = res.headers.get('content-type') || ''
+              return type.includes('application/json') ? name : null
+            } catch {
+              return null
+            }
+          }))
+          return checks.filter((n): n is string => Boolean(n))
+        }
       }
     }
-
-    // Kein Manifest vorhanden oder ungültig → keine Liste anzeigen, um Phantom-Dateien zu vermeiden
     return []
   } catch (error) {
     console.error('Fehler beim Laden der verfügbaren JSON-Dateien:', error)

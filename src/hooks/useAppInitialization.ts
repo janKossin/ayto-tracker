@@ -6,7 +6,7 @@
  */
 
 import { useEffect, useState } from 'react'
-import { DatabaseUtils } from '@/lib/db'
+import { ApiClient } from '@/lib/api-client'
 
 interface UseAppInitializationResult {
   isInitializing: boolean
@@ -29,13 +29,24 @@ export function useAppInitialization(): UseAppInitializationResult {
       try {
         console.log('🚀 Starte App-Initialisierung...')
         
-        // Prüfe nur, ob Datenbank initialisiert ist
-        const isEmpty = await DatabaseUtils.isEmpty()
-        
-        if (isEmpty) {
-          console.log('📭 Datenbank ist leer - keine automatische Datenladung')
-        } else {
-          console.log('✅ Datenbank bereits initialisiert')
+        // Prüfe Backend-Status über Stats Endpoint
+        try {
+          // Versuche Stats zu laden, um zu sehen ob Daten da sind
+          // Wenn der Endpoint 404 liefert (weil noch nicht deployed?), fangen wir das ab.
+          // Wir nehmen an /stats gibt { participants: number, ... } zurück
+          const stats = await ApiClient.get('/stats') as { participants: number }
+          const isEmpty = !stats || stats.participants === 0
+          
+          if (isEmpty) {
+            console.log('📭 Datenbank ist leer')
+          } else {
+            console.log('✅ Datenbank bereits initialisiert')
+          }
+        } catch (e) {
+          console.warn('Backend nicht erreichbar oder Fehler beim Check:', e)
+          // Wir lassen die App trotzdem starten, vielleicht ist das Backend down
+          // aber wir wollen nicht komplett blockieren (oder doch?)
+          // Fürs erste loggen wir nur.
         }
         
         console.log('✅ App-Initialisierung abgeschlossen')

@@ -5,7 +5,7 @@
  * Trennt UI von Business Logic.
  */
 
-import { db } from '@/lib/db'
+import { ApiClient } from '@/lib/api-client'
 import type { Participant, ParticipantDTO } from '@/types'
 import { withErrorHandling, validateRequired, validateStringLength, validateNumberRange } from '@/utils/errorHandling'
 
@@ -15,7 +15,7 @@ export class ParticipantService {
    */
   static async getAllParticipants(): Promise<Participant[]> {
     return await withErrorHandling(
-      () => db.participants.toArray(),
+      () => ApiClient.get('/participants'),
       'Fehler beim Laden der Teilnehmer'
     )
   }
@@ -24,17 +24,16 @@ export class ParticipantService {
    * Lädt Teilnehmer nach Geschlecht
    */
   static async getParticipantsByGender(gender: 'F' | 'M'): Promise<Participant[]> {
-    return await db.participants.where('gender').equals(gender).toArray()
+    const participants = await this.getAllParticipants()
+    return participants.filter(p => p.gender === gender)
   }
 
   /**
    * Lädt aktive Teilnehmer
    */
   static async getActiveParticipants(): Promise<Participant[]> {
-    return await withErrorHandling(
-      () => db.participants.where('active').equals(1).toArray(),
-      'Fehler beim Laden der aktiven Teilnehmer'
-    )
+    const participants = await this.getAllParticipants()
+    return participants.filter(p => p.active)
   }
 
   /**
@@ -46,7 +45,7 @@ export class ParticipantService {
     
     return allParticipants.filter(participant => 
       participant.name.toLowerCase().includes(lowerQuery) ||
-      participant.knownFrom.toLowerCase().includes(lowerQuery)
+      (participant.knownFrom && participant.knownFrom.toLowerCase().includes(lowerQuery))
     )
   }
 
@@ -54,21 +53,22 @@ export class ParticipantService {
    * Erstellt einen neuen Teilnehmer
    */
   static async createParticipant(participant: Omit<Participant, 'id'>): Promise<number> {
-    return await db.participants.add(participant)
+    const result = await ApiClient.post('/participants', participant)
+    return result.id
   }
 
   /**
    * Aktualisiert einen Teilnehmer
    */
   static async updateParticipant(id: number, updates: Partial<Participant>): Promise<void> {
-    await db.participants.update(id, updates)
+    await ApiClient.put(`/participants/${id}`, updates)
   }
 
   /**
    * Löscht einen Teilnehmer
    */
   static async deleteParticipant(id: number): Promise<void> {
-    await db.participants.delete(id)
+    await ApiClient.delete(`/participants/${id}`)
   }
 
   /**

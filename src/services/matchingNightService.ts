@@ -5,7 +5,7 @@
  * Trennt UI von Business Logic.
  */
 
-import { db } from '@/lib/db'
+import { ApiClient } from '@/lib/api-client'
 import type { MatchingNight, MatchingNightDTO, Pair } from '@/types'
 import { createBroadcastDateTime, sortBroadcastsChronologically, ensureMatchingNightBroadcastData } from '@/utils/broadcastUtils'
 
@@ -14,7 +14,8 @@ export class MatchingNightService {
    * Lädt alle Matching Nights aus der Datenbank
    */
   static async getAllMatchingNights(): Promise<MatchingNight[]> {
-    return await db.matchingNights.toArray()
+    const dtos = await ApiClient.get('/matching-nights') as MatchingNightDTO[]
+    return dtos.map(dto => this.fromDTO(dto))
   }
 
   /**
@@ -38,27 +39,29 @@ export class MatchingNightService {
     // Stelle sicher, dass Ausstrahlungsdaten gesetzt sind
     const matchingNightWithBroadcastData = ensureMatchingNightBroadcastData(matchingNight)
     
-    const newMatchingNight: Omit<MatchingNight, 'id'> = {
+    // API expects JSON, date objects usually serialize to ISO strings automatically
+    const newMatchingNight = {
       ...matchingNightWithBroadcastData,
       createdAt: now
     }
     
     console.log('🔧 MatchingNightService: Erstelle neue Matching Night mit Ausstrahlungsdaten:', newMatchingNight)
-    return await db.matchingNights.add(newMatchingNight)
+    const result = await ApiClient.post('/matching-nights', newMatchingNight)
+    return result.id
   }
 
   /**
    * Aktualisiert eine Matching Night
    */
   static async updateMatchingNight(id: number, updates: Partial<MatchingNight>): Promise<void> {
-    await db.matchingNights.update(id, updates)
+    await ApiClient.put(`/matching-nights/${id}`, updates)
   }
 
   /**
    * Löscht eine Matching Night
    */
   static async deleteMatchingNight(id: number): Promise<void> {
-    await db.matchingNights.delete(id)
+    await ApiClient.delete(`/matching-nights/${id}`)
   }
 
   /**

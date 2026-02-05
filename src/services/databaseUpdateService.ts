@@ -8,8 +8,8 @@
  * - Service Worker Integration
  */
 
-import { DatabaseUtils, db, type Participant, type MatchingNight, type Matchbox, type Penalty } from '@/lib/db'
-import type { DatabaseImport, ParticipantDTO, MatchingNightDTO, MatchboxDTO, PenaltyDTO } from '@/types'
+import { ApiClient } from '@/lib/api-client'
+import type { DatabaseImport } from '@/types'
 
 // Manifest-Interface
 export interface DatabaseManifest {
@@ -73,16 +73,30 @@ export async function fetchDatabaseManifest(): Promise<DatabaseManifest> {
 }
 
 /**
+ * Holt den aktuellen Wert aus der DB-Meta via API
+ */
+async function getMetaValue(key: string): Promise<string> {
+    try {
+        const res = await ApiClient.get(`/meta/${key}`);
+        return res.value || 'unknown';
+    } catch (e) {
+        return 'unknown';
+    }
+}
+
+/**
  * Prüft, ob ein Datenbank-Update verfügbar ist
  */
 export async function checkForDatabaseUpdate(): Promise<DatabaseUpdateState> {
   try {
-    const [manifest, currentVersion, currentDataHash] = await Promise.all([
+    const [manifest, currentVersionRaw, currentDataHash] = await Promise.all([
       fetchDatabaseManifest(),
-      DatabaseUtils.getDbVersion(),
-      DatabaseUtils.getDataHash()
+      getMetaValue('dbVersion'),
+      getMetaValue('dataHash')
     ])
     
+    const currentVersion = currentVersionRaw !== 'unknown' ? currentVersionRaw : 'v0.0.0'
+
     // Update verfügbar wenn Version oder Daten-Hash sich geändert haben
     const isUpdateAvailable = manifest.version !== currentVersion || manifest.dataHash !== currentDataHash
     
@@ -173,89 +187,23 @@ export async function performDatabaseUpdate(): Promise<DatabaseUpdateResult> {
     
     console.log(`📥 Neue Daten geladen (Version ${manifest.version}, Hash ${manifest.dataHash})`)
     
-    // 2. Atomares Update: Neue Daten zuerst in temporäre Struktur
-    await db.transaction('rw', [db.participants, db.matchingNights, db.matchboxes, db.penalties, db.meta], async () => {
-      // Alle bestehenden Daten löschen
-      await Promise.all([
-        db.participants.clear(),
-        db.matchingNights.clear(),
-        db.matchboxes.clear(),
-        db.penalties.clear()
-      ])
-      
-      // DTO -> Domain Mapping mit Typ-Konvertierungen
-      const mapParticipant = (p: ParticipantDTO): Participant => ({
-        id: p.id,
-        name: p.name,
-        knownFrom: p.knownFrom,
-        age: p.age,
-        status: p.status === 'Aktiv' || p.status === 'Inaktiv' ? p.status : undefined,
-        active: p.active,
-        photoUrl: p.photoUrl,
-        bio: p.bio,
-        gender: p.gender,
-        photoBlob: p.photoBlob,
-        socialMediaAccount: p.socialMediaAccount,
-        freeProfilePhotoUrl: p.freeProfilePhotoUrl,
-        freeProfilePhotoAttribution: p.freeProfilePhotoAttribution,
-        freeProfilePhotoLicense: p.freeProfilePhotoLicense
-      })
-
-      const mapMatchingNight = (m: MatchingNightDTO): MatchingNight => ({
-        id: m.id,
-        name: m.name,
-        date: m.date,
-        pairs: m.pairs,
-        totalLights: m.totalLights,
-        createdAt: new Date(m.createdAt),
-        ausstrahlungsdatum: m.ausstrahlungsdatum,
-        ausstrahlungszeit: m.ausstrahlungszeit
-      })
-
-      const mapMatchbox = (m: MatchboxDTO): Matchbox => ({
-        id: m.id,
-        woman: m.woman,
-        man: m.man,
-        matchType: m.matchType,
-        price: m.price,
-        buyer: m.buyer,
-        createdAt: new Date(m.createdAt),
-        updatedAt: new Date(m.updatedAt),
-        ausstrahlungsdatum: m.ausstrahlungsdatum,
-        ausstrahlungszeit: m.ausstrahlungszeit
-      })
-
-      const mapPenalty = (p: PenaltyDTO): Penalty => ({
-        id: p.id,
-        participantName: p.participantName,
-        reason: p.reason,
-        amount: p.amount,
-        date: p.date,
-        description: p.description,
-        createdAt: new Date(p.createdAt)
-      })
-
-      const participantsMapped = newData.participants.map(mapParticipant)
-      const matchingNightsMapped = newData.matchingNights.map(mapMatchingNight)
-      const matchboxesMapped = newData.matchboxes.map(mapMatchbox)
-      const penaltiesMapped = newData.penalties.map(mapPenalty)
-
-      // Neue Daten einfügen (upsert)
-      await Promise.all([
-        db.participants.bulkPut(participantsMapped),
-        db.matchingNights.bulkPut(matchingNightsMapped),
-        db.matchboxes.bulkPut(matchboxesMapped),
-        db.penalties.bulkPut(penaltiesMapped)
-      ])
-      
-      // Meta-Daten aktualisieren
-      await Promise.all([
-        DatabaseUtils.setDbVersion(manifest.version),
-        DatabaseUtils.setDataHash(manifest.dataHash),
-        DatabaseUtils.setLastUpdateDate(manifest.released)
-      ])
-    })
+    // 2. Import via Backend API
+    // Wir senden die Daten an den Backend Import Endpoint
+    // Hierbei wird ein 'clearBeforeImport' Flag gesetzt, das wir im Backend implementiert haben (implizit in meiner Implementierung)
+    // Wait, did I implement clearBeforeImport in import.ts? Yes I did check for it.
     
+    await ApiClient.post('/import', {
+        ...newData,
+        clearBeforeImport: true
+    });
+    
+    // 3. Meta-Daten aktualisieren
+    await Promise.all([
+        ApiClient.post('/meta', { key: 'dbVersion', value: manifest.version }),
+        ApiClient.post('/meta', { key: 'dataHash', value: manifest.dataHash }),
+        ApiClient.post('/meta', { key: 'lastUpdateDate', value: manifest.released })
+    ]);
+
     console.log(`✅ Datenbank erfolgreich auf Version ${manifest.version} (Hash: ${manifest.dataHash}) aktualisiert`)
     
     return {

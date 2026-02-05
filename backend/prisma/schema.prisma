@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Participant {
+  id                          Int      @id @default(autoincrement())
+  name                        String
+  gender                      String
+  status                      String?
+  active                      Boolean? @default(true)
+  knownFrom                   String?
+  age                         Int?
+  photoUrl                    String?
+  source                      String?
+  bio                         String?
+  socialMediaAccount          String?
+  freeProfilePhotoUrl         String?
+  freeProfilePhotoAttribution String?
+  freeProfilePhotoLicense     String?
+  // Blob handling in SQL is tricky, we might want to store files differently or just base64 string if small.
+  // For now using Bytes.
+  photoBlob                   Bytes?
+  createdAt                   DateTime @default(now())
+  updatedAt                   DateTime @updatedAt
+}
+
+model MatchingNight {
+  id                 Int      @id @default(autoincrement())
+  name               String
+  date               String
+  pairs              Json
+  totalLights        Int?
+  ausstrahlungsdatum String?
+  ausstrahlungszeit  String?
+  createdAt          DateTime @default(now())
+}
+
+model Matchbox {
+  id                 Int      @id @default(autoincrement())
+  woman              String
+  man                String
+  matchType          String
+  price              Int?
+  buyer              String?
+  soldDate           DateTime?
+  ausstrahlungsdatum String?
+  ausstrahlungszeit  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+model Penalty {
+  id              Int      @id @default(autoincrement())
+  participantName String
+  reason          String
+  amount          Float
+  date            String
+  description     String?
+  createdAt       DateTime @default(now())
+}
+
+model BroadcastNote {
+  id        Int      @id @default(autoincrement())
+  date      String   @unique
+  notes     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProbabilityCache {
+  id        Int      @id @default(autoincrement())
+  dataHash  String
+  result    Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Meta {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

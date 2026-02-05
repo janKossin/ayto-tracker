@@ -29,7 +29,10 @@ import type {
   CeremonyConstraint,
   BoxDecision
 } from '@/types'
-import { db, DatabaseUtils } from '@/lib/db'
+import { ApiClient } from '@/lib/api-client'
+import { ParticipantService } from '@/services/participantService'
+import { MatchingNightService } from '@/services/matchingNightService'
+import { MatchboxService } from '@/services/matchboxService'
 import { generateDataHash } from '@/services/probabilityService'
 
 /**
@@ -249,11 +252,11 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
       
       console.log('📊 Lade Daten aus Datenbank...')
       
-      // Schritt 1: Daten aus Datenbank laden
+      // Schritt 1: Daten aus Backend laden (via Services)
       const [participants, matchingNights, matchboxes] = await Promise.all([
-        db.participants.toArray(),
-        db.matchingNights.toArray(),
-        db.matchboxes.toArray()
+        ParticipantService.getAllParticipants(),
+        MatchingNightService.getAllMatchingNights(),
+        MatchboxService.getAllMatchboxes()
       ])
       
       console.log('✅ Daten geladen:', {
@@ -302,7 +305,7 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
         currentStep: 'Prüfe Cache...'
       })
       
-      const cachedResult = await DatabaseUtils.getProbabilityCache(dataHash)
+      const cachedResult = await ApiClient.get(`/probability-cache?dataHash=${dataHash}`).catch(() => null);
       
       console.log('🔍 Cache-Prüfung:', {
         dataHash,
@@ -310,7 +313,7 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
         cachedResultData: cachedResult
       })
       
-      if (cachedResult) {
+      if (cachedResult && cachedResult.result) {
         // Cache-Hit: Verwende gecachtes Ergebnis
         console.log('✅ Verwende Cache-Ergebnis:', cachedResult.result)
         setResult(cachedResult.result)
@@ -330,7 +333,6 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
       })
       
       // Inline Worker mit dynamischem Import
-      // Alternativ: Worker aus separater Datei laden
       const calculationResult = await calculateWithWorker(input, (progress, step) => {
         setStatus({
           isCalculating: true,
@@ -340,11 +342,9 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
       })
       
       // Schritt 5: Ergebnis im Cache speichern
-      await DatabaseUtils.saveProbabilityCache({
+      await ApiClient.post('/probability-cache', {
         dataHash,
-        result: calculationResult,
-        createdAt: new Date(),
-        updatedAt: new Date()
+        result: calculationResult
       })
       
       // Schritt 6: State aktualisieren
@@ -371,7 +371,7 @@ export function useProbabilityCalculation(): UseProbabilityCalculationReturn {
    * Löscht den Cache und setzt das Ergebnis zurück
    */
   const clearCache = useCallback(async () => {
-    await DatabaseUtils.clearProbabilityCache()
+    await ApiClient.delete('/probability-cache')
     setResult(null)
     setStatus({
       isCalculating: false,

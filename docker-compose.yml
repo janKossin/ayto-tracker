@@ -1,0 +1,6 @@
+services:
+  ayto-tracker:
+    build: .
+    ports:
+      - "4173:80"
+    restart: always

@@ -3,6 +3,7 @@
 Eine moderne Web‑App zur Nachverfolgung und Auswertung von "Are You The One?" Staffeln.
 
 Ziel der Anwendung:
+
 - Transparente, konsistente Erfassung und Visualisierung von Matching Nights, Matchboxes und Teilnehmern
 - Bedienoberfläche für schnelles Planen/Validieren von Paarungen (Drag & Drop)
 - Korrekte Berücksichtigung der Timeline (Ausstrahlungsreihenfolge) bei Perfect Matches
@@ -70,9 +71,10 @@ Ziel der Anwendung:
 Die App implementiert ein erweiterte Geräteerkennung für optimale Benutzererfahrung:
 
 #### **Smartphones** 📱
+
 - **Ansicht**: Mobile UI mit allen mobilen Features
 - **Rotation-Lock**: Portrait-Modus wird blockiert mit Hinweis-Overlay (nur Hochformat)
-- **Features**: 
+- **Features**:
   - Eingeklappte Menü-Sidebar (max. 1/3 Bildschirmhöhe)
   - Menü-Icon oben rechts zum Aufklappen
   - Vollbreite Content-Bereiche
@@ -80,15 +82,18 @@ Die App implementiert ein erweiterte Geräteerkennung für optimale Benutzererfa
   - Vergrößerte Eingabefelder für bessere Bedienbarkeit
 
 #### **Tablets** 📱
+
 - **Ansicht**: Desktop UI (nur im Querformat)
 - **Rotation-Lock**: Portrait-Modus wird blockiert mit Hinweis-Overlay (nur Querformat)
 - **Features**: Vollständige Desktop-Funktionalität mit Drag & Drop
 
 #### **Desktop** 🖥️
+
 - **Ansicht**: Desktop UI
 - **Features**: Vollständige Funktionalität ohne Einschränkungen
 
 #### **Geräteerkennung**
+
 ```typescript
 // Automatische Erkennung basierend auf:
 - User Agent Patterns
@@ -96,7 +101,7 @@ Die App implementiert ein erweiterte Geräteerkennung für optimale Benutzererfa
 - Orientierung
 
 // Smartphone: ≤480px Breite
-// Tablet: 481px-1024px Breite  
+// Tablet: 481px-1024px Breite
 // Desktop: >1024px Breite
 ```
 
@@ -111,26 +116,31 @@ Die App implementiert ein erweiterte Geräteerkennung für optimale Benutzererfa
 Voraussetzungen: Node.js ≥ 18
 
 Installation:
+
 ```bash
 npm ci
 ```
 
 Entwicklung starten (Vite Dev Server):
+
 ```bash
 npm run dev
 ```
 
 Lints ausführen:
+
 ```bash
 npm run lint
 ```
 
 Build (Vite):
+
 ```bash
 npm run build
 ```
 
 Vorschau des Builds:
+
 ```bash
 npm run preview
 ```
@@ -138,8 +148,8 @@ npm run preview
 ## Deploy
 
 - Statischer Build in `dist/`
-- Kann auf beliebigen Static Hosts (z. B. Netlify, Vercel, GitHub Pages) bereitgestellt werden
-- GitLab CI/CD Konfiguration liegt unter `.gitlab-ci.yml` (Build/Deploy‑Stages exemplarisch)
+- Automatishes Deployment via GitHub Actions (FTP)
+- Konfiguration siehe: `.github/workflows/main.yml`
 
 ## Datenverwaltung (Admin)
 
@@ -163,17 +173,17 @@ npm run preview
 
 ## Tech‑Stack
 
-- React 18, TypeScript
-- Vite, ESLint
+- React 19, TypeScript
+- Vite 7, ESLint
 - MUI (Material UI)
 - Dexie (IndexedDB)
-- Tailwind Utilities (selektiv)
+- Tailwind CSS v4
 
 ### Erweiterte Features
 
 - **Geräteerkennung**: Intelligente Unterscheidung zwischen Smartphones, Tablets und Desktop
 - **Responsive Design**: Mobile-First Ansatz mit gerätespezifischen UI-Anpassungen
-- **Rotation-Lock**: 
+- **Rotation-Lock**:
   - Smartphones: Nur Hochformat (Portrait)
   - Tablets: Nur Querformat (Landscape)
 - **PWA-Ready**: Service Worker und Offline-Funktionalität

@@ -70,8 +70,7 @@ export class MatchboxService {
     
     const newMatchbox = {
       ...matchboxWithBroadcastData,
-      createdAt: now,
-      updatedAt: now,
+
       ausstrahlungsdatum: matchbox.ausstrahlungsdatum || now.toISOString().split('T')[0], // Heutiges Datum als Standard
       ausstrahlungszeit: matchbox.ausstrahlungszeit || '20:15' // Standard AYTO Zeit für Matchboxes
     }

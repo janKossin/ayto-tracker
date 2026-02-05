@@ -11,9 +11,21 @@ export default async function matchboxRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post('/matchboxes', async (request, reply) => {
-    const data = request.body as any;
-    if (data.id === 0 || data.id === undefined) delete data.id;
-    return await prisma.matchbox.create({ data });
+    try {
+      const data = request.body as any;
+      if (data.id === 0 || data.id === undefined) delete data.id;
+      
+      console.log('📝 Creating matchbox with data:', JSON.stringify(data, null, 2));
+      
+      const result = await prisma.matchbox.create({ data });
+      return result;
+    } catch (error) {
+      console.error('❌ Error creating matchbox:', error);
+      reply.code(500).send({ 
+        error: 'Failed to create matchbox',
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
 
   fastify.put('/matchboxes/:id', async (request, reply) => {

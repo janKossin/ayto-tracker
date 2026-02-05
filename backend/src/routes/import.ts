@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
+import { resetTableSequences } from '../utils/db';
 
 const prisma = new PrismaClient();
 
@@ -93,6 +94,10 @@ export default async function importRoutes(fastify: FastifyInstance) {
         });
         
         console.log('✅ Import successful:', result);
+
+        // Fixing Sequences after import to prevent ID collisions
+        await resetTableSequences(prisma);
+
         return { success: true, stats: result };
 
     } catch (error) {

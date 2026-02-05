@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { PrismaClient } from '@prisma/client';
+import { resetTableSequences } from '../utils/db';
 
 const prisma = new PrismaClient();
 
@@ -20,5 +21,17 @@ export default async function metaRoutes(fastify: FastifyInstance) {
       create: { key, value }
     });
     return meta;
+  });
+
+  fastify.post('/meta/fix-sequences', async (request, reply) => {
+    try {
+      await resetTableSequences(prisma);
+      return { success: true, message: 'Sequences reset successfully' };
+    } catch (error) {
+      reply.code(500).send({ 
+        error: 'Failed to reset sequences',
+        details: error instanceof Error ? error.message : String(error)
+      });
+    }
   });
 }

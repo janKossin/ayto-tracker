@@ -13,6 +13,8 @@ dist/
 # IDE
 .vscode/
 .idea/
+.cursor/
+.github/
 *.swp
 *.swo
 

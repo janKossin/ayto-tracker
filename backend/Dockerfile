@@ -17,6 +17,6 @@ RUN npx prisma generate
 # Build TypeScript
 RUN npm run build
 
-EXPOSE 3000
+EXPOSE 4172
 
 CMD ["npm", "start"]

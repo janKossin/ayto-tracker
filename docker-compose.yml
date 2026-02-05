@@ -17,16 +17,16 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
-      - "5432:5432"
+      - "4174:5432"
 
   backend:
     build: ./backend
     restart: always
     ports:
-      - "3000:3000"
+      - "4172:4172"
     environment:
       DATABASE_URL: postgres://user:password@postgres:5432/ayto_tracker?schema=public
-      PORT: 3000
+      PORT: 4172
     depends_on:
       - postgres
     command: sh -c "npx prisma db push && npm start"

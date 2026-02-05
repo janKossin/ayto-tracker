@@ -9,6 +9,12 @@ export class ApiClient {
         'Expires': '0'
       }
     });
+    
+    const contentType = response.headers.get('content-type');
+    if (contentType && contentType.includes('text/html')) {
+        throw new Error(`API Error: Received HTML instead of JSON. Check URL or Backend status. Endpoint: ${endpoint}`);
+    }
+
     if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     return await response.json();
   }

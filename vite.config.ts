@@ -11,6 +11,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg','favicon.ico','robots.txt','apple-touch-icon.png'],
+      workbox: {
+        navigateFallbackDenylist: [/^\/api/]
+      },
       manifest: {
         name: 'AYTO-Tracker',
         short_name: 'AYTO Tracker',
